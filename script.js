@@ -65,3 +65,84 @@
 
  /* код кошику*/
 
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+      var checkboxes = document.querySelectorAll('input[data-name="add"]');
+      var quantityInput = document.getElementById('Quantity');
+      var addToCartButton = document.querySelector('.add_card');
+      var cartItemsContainer = $('#cart-items');
+      var cartTotalElement = $('.cart_total-price');
+
+      addToCartButton.addEventListener('click', function () {
+        addToCart();
+      });
+
+      function addToCart() {
+        var burgerImage = $('.img_block img').attr('src');
+        var burgerName = $('.product_title').text();
+        var burgerIngredients = getSelectedIngredients();
+        var burgerQuantity = quantityInput.value;
+        var burgerPrice = document.getElementById('price').textContent;
+
+        var cartItem = `
+          <div class="cart-item">
+            <div class="cart-items_left">
+              <img class="burger-image" src="${burgerImage}" alt="${burgerName}">
+              <div class="cart_info">
+                <h4 class="cart_product_title">${burgerName}</h4>
+                <p class="ingredients-list cart_ingredients">Ingredients: ${burgerIngredients}</p>
+                <button class="remove-from-cart" onclick="removeFromCart(this)">Remove</button>
+              </div>
+            </div>
+            <div class="cart-items_right">
+              <p class="cart_price">${burgerPrice}</p>
+              <p>Quantity: ${burgerQuantity}</p>
+              <div class="burger-details">
+                <!-- Додайте сюди додаткові елементи, які вам потрібні в карточці товару -->
+              </div>
+            </div>
+          </div>
+        `;
+
+        // Додавання товару до кошика
+        cartItemsContainer.append(cartItem);
+
+        // Оновлення ціни в кошику
+        updateCartTotal();
+      }
+
+      function getSelectedIngredients() {
+        var selectedIngredients = [];
+
+        checkboxes.forEach(function (checkbox) {
+          if (checkbox.checked) {
+            var ingredientName = checkbox.parentNode.textContent.trim().replace('Add ', '');
+            selectedIngredients.push(ingredientName);
+          }
+        });
+
+        return selectedIngredients.join(', ');
+      }
+
+      // Функція для видалення товару з кошика
+      window.removeFromCart = function (button) {
+        $(button).closest('.cart-item').remove();
+        // Оновлення ціни в кошику
+        updateCartTotal();
+      }
+
+      // Оновлення ціни в кошику
+      function updateCartTotal() {
+        var total = 0;
+
+        $('.cart-item p.cart_price').each(function () {
+          var priceText = $(this).text().replace('Price: $', '');
+          var price = parseFloat(priceText);
+          total += price;
+        });
+
+        // Оновлення вмісту елемента з загальною ціною
+        cartTotalElement.text(total.toFixed(2));
+      }
+    });
+  </script>
