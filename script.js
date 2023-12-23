@@ -85,13 +85,18 @@
 
     var cartItem = `
       <div class="cart-item">
-        <img class="burger-image" src="${burgerImage}" alt="${burgerName}">
-        <div class="burger-details">
+        <div class="cart-items_left">
+         <img class="burger-image" src="${burgerImage}" alt="${burgerName}">
+         <div class="cart_info">
           <h4 class="cart_product_title">${burgerName}</h4>
           <p class="ingredients-list cart_ingredients">Ingredients: ${burgerIngredients}</p>
-          <p>Quantity: ${burgerQuantity}</p>
-          <p class="cart_price">${burgerPrice}</p>
           <button class="remove-from-cart" onclick="removeFromCart(this)">Remove</button>
+         </div>
+        </div>
+        <div class="cart-items_right">
+         <p class="cart_price">${burgerPrice}</p>
+          <p>Quantity: ${burgerQuantity}</p>
+        <div class="burger-details">
         </div>
       </div>
     `;
