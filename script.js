@@ -65,6 +65,7 @@
 
  /* код кошику*/
 
+<script>
     document.addEventListener('DOMContentLoaded', function () {
       var checkboxes = document.querySelectorAll('input[data-name="add"]');
       var quantityInput = document.getElementById('Quantity');
@@ -144,3 +145,4 @@
         cartTotalElement.text(total.toFixed(2));
       }
     });
+  </script>
