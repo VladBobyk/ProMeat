@@ -83,23 +83,26 @@
     var burgerQuantity = quantityInput.value;
     var burgerPrice = document.getElementById('price').textContent;
 
-    var cartItem = `
-      <div class="cart-item">
-        <div class="cart-items_left">
-         <img class="burger-image" src="${burgerImage}" alt="${burgerName}">
-         <div class="cart_info">
-          <h4 class="cart_product_title">${burgerName}</h4>
-          <p class="ingredients-list cart_ingredients">Ingredients: ${burgerIngredients}</p>
-          <button class="remove-from-cart" onclick="removeFromCart(this)">Remove</button>
-         </div>
-        </div>
-        <div class="cart-items_right">
-         <p class="cart_price">${burgerPrice}</p>
-          <p>Quantity: ${burgerQuantity}</p>
-        <div class="burger-details">
-        </div>
+  var cartItem = `
+  <div class="cart-item">
+    <div class="cart-items_left">
+      <img class="burger-image" src="${burgerImage}" alt="${burgerName}">
+      <div class="cart_info">
+        <h4 class="cart_product_title">${burgerName}</h4>
+        <p class="ingredients-list cart_ingredients">Ingredients: ${burgerIngredients}</p>
+        <button class="remove-from-cart" onclick="removeFromCart(this)">Remove</button>
       </div>
-    `;
+    </div>
+    <div class="cart-items_right">
+      <p class="cart_price">${burgerPrice}</p>
+      <p>Quantity: ${burgerQuantity}</p>
+      <div class="burger-details">
+        <!-- Додайте сюди додаткові елементи, які вам потрібні в карточці товару -->
+      </div>
+    </div>
+  </div>
+`;
+
 
     // Додавання товару до кошика
     cartItemsContainer.append(cartItem);
