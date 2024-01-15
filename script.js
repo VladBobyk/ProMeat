@@ -3,7 +3,8 @@
             document.addEventListener('DOMContentLoaded', function () {
             var checkboxes = document.querySelectorAll('input[type="checkbox"][price_add]');
             var priceElement = document.querySelector('.price');
-            var quantityInput = document.getElementById('Quantity');
+            var quantityInput = document.getElementById('quantity_card');
+
 
             // Отримання початкової ціни із атрибуту price
             var initialPrice = parseFloat(priceElement.getAttribute('price')) || 0;
