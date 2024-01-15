@@ -1,70 +1,67 @@
+// Код для карточки товару
+document.addEventListener('DOMContentLoaded', function () {
+    var checkboxes = document.querySelectorAll('input[type="checkbox"][price_add]');
+    var priceElement = document.querySelector('.price');
+    var quantityInputCard = document.getElementById('quantity_card');
 
- /* код для карточки товару*/
-            document.addEventListener('DOMContentLoaded', function () {
-            var checkboxes = document.querySelectorAll('input[type="checkbox"][price_add]');
-            var priceElement = document.querySelector('.price');
-            var quantityInput = document.getElementById('quantity_card');
+    // Отримання початкової ціни із атрибуту price
+    var initialPrice = parseFloat(priceElement.getAttribute('price')) || 0;
 
+    checkboxes.forEach(function (checkbox) {
+        checkbox.addEventListener('change', function () {
+            updatePrice();
+        });
+    });
 
-            // Отримання початкової ціни із атрибуту price
-            var initialPrice = parseFloat(priceElement.getAttribute('price')) || 0;
+    quantityInputCard.addEventListener('input', function () {
+        updatePrice();
+    });
 
-            checkboxes.forEach(function (checkbox) {
-                checkbox.addEventListener('change', function () {
-                    updatePrice();
-                });
-            });
+    $('.plus').click(function () {
+        if (quantityInputCard.value < 10) {
+            quantityInputCard.value = +quantityInputCard.value + 1;
+            updatePrice();
+        }
+    });
 
-            quantityInput.addEventListener('input', function () {
-                updatePrice();
-            });
+    $('.minus').click(function () {
+        if (quantityInputCard.value > 1) {
+            quantityInputCard.value = +quantityInputCard.value - 1;
+            updatePrice();
+        }
+    });
 
-            $('.plus').click(function () {
-                var input = $('#Quantity');
-                if (input.val() < 10) {
-                    input.val(+input.val() + 1).trigger('input');
-                }
-            });
+    // Встановлення початкового значення 1
+    $('input[type="number"]').val(1);
 
-            $('.minus').click(function () {
-                var input = $('#Quantity');
-                if (input.val() > 1) {
-                    input.val(+input.val() - 1).trigger('input');
-                }
-            });
+    // Заборона встановлення значення менше 1
+    $('input[type="number"]').on('input', function () {
+        if ($(this).val() < 1) {
+            $(this).val(1);
+        }
+    });
 
-            // Встановлення початкового значення 1
-            $('input[type="number"]').val(1);
+    // Оновлення значення в 'value' при введенні
+    $('input[type="number"]').on('input', function () {
+        updatePrice(); // Оновлення ціни при введенні значення
+    });
 
-            // Заборона встановлення значення менше 1
-            $('input[type="number"]').on('input', function () {
-                if ($(this).val() < 1) {
-                    $(this).val(1);
-                }
-            });
+    function updatePrice() {
+        var totalPrice = initialPrice;
 
-            // Оновлення значення в 'value' при введенні
-            $('input[type="number"]').on('input', function () {
-                updatePrice(); // Оновлення ціни при введенні значення
-            });
-
-            function updatePrice() {
-                var totalPrice = initialPrice;
-
-                checkboxes.forEach(function (checkbox) {
-                    if (checkbox.checked) {
-                        var priceAdd = parseFloat(checkbox.getAttribute('price_add')) || 0;
-                        totalPrice += priceAdd;
-                    }
-                });
-                // Оновлення вмісту елемента з ціною та атрибуту price
-                priceElement.textContent = (totalPrice * quantityInput.value).toFixed(0) + ' ₴';
-                priceElement.setAttribute('price', totalPrice.toFixed(2));
+        checkboxes.forEach(function (checkbox) {
+            if (checkbox.checked) {
+                var priceAdd = parseFloat(checkbox.getAttribute('price_add')) || 0;
+                totalPrice += priceAdd;
             }
         });
+        // Оновлення вмісту елемента з ціною та атрибуту price
+        priceElement.textContent = (totalPrice * quantityInputCard.value).toFixed(0) + ' ₴';
+        priceElement.setAttribute('price', totalPrice.toFixed(2));
+    }
+});
 
-
- /* код для кошика*/
+// Код для кошика
 var cartItemsContainer;
 var savedCartItems;
 
@@ -127,7 +124,7 @@ function addToCart() {
     var burgerImage = $('.img_block img').attr('src');
     var burgerName = $('.product_title').text();
     var burgerIngredients = getSelectedIngredients().replace(/, /g, '<br>');
-    var burgerQuantity = $('.quantity').val();
+    var burgerQuantity = $('#quantity_card').val();
     var burgerPricePerUnit = parseFloat($('.price').attr('price')) || 0;
 
     var itemId = 'item_' + Date.now();
@@ -251,7 +248,3 @@ $(document).ready(function () {
         increaseQuantity(cartItem);
     });
 });
-
-
-
-
