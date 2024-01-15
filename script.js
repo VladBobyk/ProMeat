@@ -66,7 +66,7 @@
 
 
 	/* код для кошика*/
-    var cartItemsContainer;
+var cartItemsContainer;
     var savedCartItems;
 
     function updateCartNumber() {
@@ -182,9 +182,6 @@
 
         var totalPrice = initialPricePerUnit * quantity;
         cartItem.find('.cart_price').text(`${Math.floor(totalPrice)} ₴`);
-
-        // Оновлення значення 'value' у введенні кількості товару
-        quantityInput.val(quantity);
 
         saveCart();
         updateCartTotal();
