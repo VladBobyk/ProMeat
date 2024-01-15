@@ -139,9 +139,9 @@ var cartItemsContainer;
                         <h4 class="cart_product_title">${burgerName}</h4>
                         <p class="ingredients-list cart_ingredients">${burgerIngredients}</p>
                         <div class="product_quantity product_quantity_cart">
-                            <a href="#" class="minus_cart w-inline-block">-</a>
+                            <a href="#" class="minus minus_cart w-inline-block">-</a>
                             <input type="number" class="quantity quantity_cart w-input" maxlength="256" name="Quantity" data-name="Quantity" placeholder="" id="Quantity" value="${Math.max(burgerQuantity, 1)}" required="" min="1">
-                            <a href="#" class="plus_cart w-inline-block">+</a>
+                            <a href="#" class="plus plus_cart w-inline-block">+</a>
                         </div>
                     </div>
                 </div>
