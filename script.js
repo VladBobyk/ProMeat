@@ -183,6 +183,9 @@
         var totalPrice = initialPricePerUnit * quantity;
         cartItem.find('.cart_price').text(`${Math.floor(totalPrice)} ₴`);
 
+        // Оновлення значення 'value' у введенні кількості товару
+        quantityInput.val(quantity);
+
         saveCart();
         updateCartTotal();
         updateCartNumber(); // Оновлення кількості товарів
@@ -258,4 +261,3 @@
             increaseQuantity($(this));
         });
     });
-
