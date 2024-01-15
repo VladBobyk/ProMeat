@@ -18,14 +18,14 @@
                 updatePrice();
             });
 
-            $('.plus').click(function () {
+            $('.plus_prod').click(function () {
                 var input = $('#Quantity');
                 if (input.val() < 10) {
                     input.val(+input.val() + 1).trigger('input');
                 }
             });
 
-            $('.minus').click(function () {
+            $('.minus_prod').click(function () {
                 var input = $('#Quantity');
                 if (input.val() > 1) {
                     input.val(+input.val() - 1).trigger('input');
