@@ -1,3 +1,4 @@
+
  /* код для карточки товару*/
             document.addEventListener('DOMContentLoaded', function () {
             var checkboxes = document.querySelectorAll('input[type="checkbox"][price_add]');
@@ -62,10 +63,7 @@
         });
 
 
-
-
-
-	/* код для кошика*/
+ /* код для кошика*/
 var cartItemsContainer;
     var savedCartItems;
 
@@ -258,3 +256,7 @@ var cartItemsContainer;
             increaseQuantity($(this));
         });
     });
+
+
+
+
