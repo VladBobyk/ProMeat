@@ -66,7 +66,7 @@
 
 
 	/* код для кошика*/
-   var cartItemsContainer;
+    var cartItemsContainer;
     var savedCartItems;
 
     function updateCartNumber() {
@@ -96,6 +96,7 @@
         localStorage.setItem('cartItems', JSON.stringify(cartItems));
         updateCartTotal();
         updateCartNumber(); // Оновлення кількості товарів
+        addPackagingToTotal(); // Додавання ціни упакування до загальної вартості кошика
     }
 
     function updateCartTotal() {
@@ -120,6 +121,7 @@
         cartItemsContainer.html(savedCartItems.map(item => item.html).join(''));
         updateCartTotal();
         updateCartNumber(); // Оновлення кількості товарів
+        addPackagingToTotal(); // Додавання ціни упакування до загальної вартості кошика
     }
 
     function addToCart() {
@@ -184,6 +186,7 @@
         saveCart();
         updateCartTotal();
         updateCartNumber(); // Оновлення кількості товарів
+        addPackagingToTotal(); // Додавання ціни упакування до загальної вартості кошика
     }
 
     function removeFromCart(button) {
@@ -192,6 +195,7 @@
         saveCart();
         updateCartTotal();
         updateCartNumber(); // Оновлення кількості товарів
+        addPackagingToTotal(); // Додавання ціни упакування до загальної вартості кошика
     }
 
     function decreaseQuantity(button) {
@@ -212,6 +216,17 @@
 
         quantityInput.val(newQuantity);
         updateCartPrice(quantityInput);
+    }
+
+    function addPackagingToTotal() {
+        var packagingPriceElement = $('.packaging_price');
+        if (packagingPriceElement.length > 0) {
+            var packagingPrice = parseFloat(packagingPriceElement.text().replace('₴', '')) || 0;
+            var currentTotalPrice = parseFloat($('.cart_total-price').text().replace('₴', '')) || 0;
+            var newTotalPrice = currentTotalPrice + packagingPrice;
+
+            $('.cart_total-price').text(`${Math.floor(newTotalPrice)} ₴`);
+        }
     }
 
     $(document).ready(function () {
