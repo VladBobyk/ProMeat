@@ -123,6 +123,7 @@ document.addEventListener('DOMContentLoaded', function () {
 // Код для кошика
 var cartItemsContainer;
 var savedCartItems;
+var packagingPricePerUnit = parseFloat($('.packaging_price').attr('packaging')) || 0;
 
 function updateCartNumber() {
     var itemCount = $('#cart-items').children('.cart-item').length;
@@ -152,6 +153,7 @@ function saveCart() {
     localStorage.setItem('cartItems', JSON.stringify(cartItems));
     updateCartTotal();
     updateCartNumber();
+    addPackagingToTotal();
 }
 
 function updateCartTotal() {
@@ -178,14 +180,61 @@ function formatPrice(price) {
     return formattedPrice.endsWith('.00') ? formattedPrice.split('.')[0] : formattedPrice;
 }
 
+function calculatePackagingPrice() {
+    var cartItems = JSON.parse(localStorage.getItem('cartItems')) || [];
+    var totalQuantity = cartItems.reduce((total, item) => total + item.quantity, 0);
+    return packagingPricePerUnit * totalQuantity;
+}
+
+function addPackagingToTotal() {
+    var packagingPriceElement = $('.packaging_price');
+    if (packagingPriceElement.length > 0) {
+        var packagingPrice = calculatePackagingPrice();
+        var currentTotalPrice = parseFloat($('.cart_total-price').text().replace('₴', '')) || 0;
+        var newTotalPrice = currentTotalPrice + packagingPrice;
+
+        $('.cart_total-price').text(`${formatPrice(newTotalPrice)} ₴`);
+        $('.packaging_price').text(`${formatPrice(packagingPrice)} ₴`);
+    }
+}
+
 function restoreCart(savedCartItems) {
     cartItemsContainer.html(savedCartItems.map(item => item.html).join(''));
     updateCartTotal();
     updateCartNumber();
+    addPackagingToTotal();
 }
 
 function addToCart() {
-    // ... (інші частини функції не змінюються)
+    var burgerImage = $('.img_block img').attr('src');
+    var burgerName = $('.product_title').text();
+    var burgerIngredients = getSelectedIngredients().replace(/, /g, '<br>');
+    var burgerQuantity = $('#quantity_card').val();
+    var burgerPricePerUnit = parseFloat($('.price').attr('price')) || 0;
+
+    var itemId = 'item_' + Date.now();
+
+    var cartItem = `
+        <div class="cart-item" data-item-id="${itemId}" data-initial-price="${burgerPricePerUnit}">
+            <div class="cart-items_left">
+                <img class="burger-image" src="${burgerImage}" alt="${burgerName}">
+                <div class="cart_info">
+                    <h4 class="cart_product_title">${burgerName}</h4>
+                    <p class="ingredients-list cart_ingredients">${burgerIngredients}</p>
+                    <div class="product_quantity product_quantity_cart">
+                        <a href="#" class="minus minus_cart w-inline-block" id="minus_cart">-</a>
+                        <input type="number" class="quantity quantity_cart w-input" maxlength="256" name="Quantity" data-name="Quantity" placeholder="" id="Quantity" value="${Math.max(burgerQuantity, 1)}" required="" min="1">
+                        <a href="#" class="plus plus_cart w-inline-block" id="plus_cart">+</a>
+                    </div>
+                </div>
+            </div>
+            <div class="cart-items_right">
+                <p class="cart_price">${formatPrice(burgerPricePerUnit * burgerQuantity)} ₴</p>
+                <button class="remove-from-cart">Видалити</button>
+                <div class="burger-details"></div>
+            </div>
+        </div>
+    `;
 
     console.log('Burger Ingredients:', burgerIngredients);
 
@@ -194,12 +243,30 @@ function addToCart() {
     updateCartNumber();
 }
 
+function getSelectedIngredients() {
+    var selectedIngredients = [];
+
+    $('input[data-name="add"]:checked').each(function () {
+        var ingredientName = $(this).next('span').text().trim();
+        selectedIngredients.push(ingredientName);
+    });
+
+    return selectedIngredients.join(', ');
+}
+
+function updateCartPrice(cartItem, newQuantity) {
+    var initialPricePerUnit = parseFloat(cartItem.data('initial-price'));
+    var totalPrice = initialPricePerUnit * newQuantity;
+    cartItem.find('.cart_price').text(`${formatPrice(totalPrice)} ₴`);
+}
+
 function removeFromCart(button) {
     var itemId = $(button).closest('.cart-item').data('item-id');
     $(`[data-item-id="${itemId}"]`).remove();
     saveCart();
     updateCartTotal();
     updateCartNumber();
+    addPackagingToTotal();
 }
 
 function decreaseQuantity(cartItem) {
@@ -212,6 +279,7 @@ function decreaseQuantity(cartItem) {
     saveCart();
     updateCartTotal();
     updateCartNumber();
+    addPackagingToTotal();
 }
 
 function increaseQuantity(cartItem) {
@@ -224,6 +292,7 @@ function increaseQuantity(cartItem) {
     saveCart();
     updateCartTotal();
     updateCartNumber();
+    addPackagingToTotal();
 }
 
 $(document).ready(function () {
@@ -253,4 +322,3 @@ $(document).ready(function () {
         increaseQuantity(cartItem);
     });
 });
-
