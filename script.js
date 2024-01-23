@@ -119,9 +119,8 @@ document.addEventListener('DOMContentLoaded', function () {
         priceElement.setAttribute('price', totalPrice.toFixed(2));
     }
 });
-</script>
 
-<!-- Код для кошика -->
+//Код для кошика 
 var cartItemsContainer;
 var savedCartItems;
 
