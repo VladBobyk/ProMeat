@@ -123,6 +123,7 @@ document.addEventListener('DOMContentLoaded', function () {
 // Код для кошика
 var cartItemsContainer;
 var savedCartItems;
+var packagingPricePerUnit = parseFloat($('.packaging_price').attr('packaging')) || 0;
 
 function updateCartNumber() {
     var itemCount = $('#cart-items').children('.cart-item').length;
@@ -144,7 +145,8 @@ function saveCart() {
 
         return {
             html: item.outerHTML,
-            initialPricePerUnit: initialPricePerUnit
+            initialPricePerUnit: initialPricePerUnit,
+            quantity: quantity
         };
     });
 
@@ -176,6 +178,24 @@ function formatPrice(price) {
     // Вивести значення після крапки, якщо більше 0
     var formattedPrice = price.toFixed(2);
     return formattedPrice.endsWith('.00') ? formattedPrice.split('.')[0] : formattedPrice;
+}
+
+function calculatePackagingPrice() {
+    var cartItems = JSON.parse(localStorage.getItem('cartItems')) || [];
+    var totalQuantity = cartItems.reduce((total, item) => total + item.quantity, 0);
+    return packagingPricePerUnit * totalQuantity;
+}
+
+function addPackagingToTotal() {
+    var packagingPriceElement = $('.packaging_price');
+    if (packagingPriceElement.length > 0) {
+        var packagingPrice = calculatePackagingPrice();
+        var currentTotalPrice = parseFloat($('.cart_total-price').text().replace('₴', '')) || 0;
+        var newTotalPrice = currentTotalPrice + packagingPrice;
+
+        $('.cart_total-price').text(`${formatPrice(newTotalPrice)} ₴`);
+        $('.packaging_price').text(`${formatPrice(packagingPrice)} ₴`);
+    }
 }
 
 function restoreCart(savedCartItems) {
@@ -273,17 +293,6 @@ function increaseQuantity(cartItem) {
     updateCartTotal();
     updateCartNumber();
     addPackagingToTotal();
-}
-
-function addPackagingToTotal() {
-    var packagingPriceElement = $('.packaging_price');
-    if (packagingPriceElement.length > 0) {
-        var packagingPrice = parseFloat(packagingPriceElement.text().replace('₴', '')) || 0;
-        var currentTotalPrice = parseFloat($('.cart_total-price').text().replace('₴', '')) || 0;
-        var newTotalPrice = currentTotalPrice + packagingPrice;
-
-        $('.cart_total-price').text(`${formatPrice(newTotalPrice)} ₴`);
-    }
 }
 
 $(document).ready(function () {
