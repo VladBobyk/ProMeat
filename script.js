@@ -209,7 +209,7 @@ function addToCart() {
     var burgerImage = $('.img_block img').attr('src');
     var burgerName = $('.product_title').text();
     var burgerIngredients = getSelectedIngredients().replace(/, /g, '<br>');
-    var burgerQuantity = $('#quantity_card').val();
+    var burgerQuantity = $('#Quantity').val();
     var burgerPricePerUnit = parseFloat($('.price').attr('price')) || 0;
 
     var itemId = 'item_' + Date.now();
