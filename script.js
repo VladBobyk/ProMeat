@@ -61,7 +61,68 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 
-// Код для кошика
+<!-- Код для карточки товару -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var checkboxes = document.querySelectorAll('input[type="checkbox"][price_add]');
+    var priceElement = document.querySelector('.price');
+    var quantityInput = document.getElementById('Quantity');
+
+    var initialPrice = parseFloat(priceElement.getAttribute('price')) || 0;
+
+    checkboxes.forEach(function (checkbox) {
+        checkbox.addEventListener('change', function () {
+            updatePrice();
+        });
+    });
+
+    quantityInput.addEventListener('input', function () {
+        updatePrice();
+    });
+
+    $('.plus').click(function () {
+        var input = $('#Quantity');
+        if (input.val() < 10) {
+            input.val(+input.val() + 1).trigger('input');
+        }
+    });
+
+    $('.minus').click(function () {
+        var input = $('#Quantity');
+        if (input.val() > 1) {
+            input.val(+input.val() - 1).trigger('input');
+        }
+    });
+
+    $('input[type="number"]').val(1);
+
+    $('input[type="number"]').on('input', function () {
+        if ($(this).val() < 1) {
+            $(this).val(1);
+        }
+    });
+
+    $('input[type="number"]').on('input', function () {
+        updatePrice();
+    });
+
+    function updatePrice() {
+        var totalPrice = initialPrice;
+
+        checkboxes.forEach(function (checkbox) {
+            if (checkbox.checked) {
+                var priceAdd = parseFloat(checkbox.getAttribute('price_add')) || 0;
+                totalPrice += priceAdd;
+            }
+        });
+
+        priceElement.textContent = (totalPrice * quantityInput.value).toFixed(0) + ' ₴';
+        priceElement.setAttribute('price', totalPrice.toFixed(2));
+    }
+});
+</script>
+
+<!-- Код для кошика -->
 var cartItemsContainer;
 var savedCartItems;
 
@@ -91,8 +152,8 @@ function saveCart() {
 
     localStorage.setItem('cartItems', JSON.stringify(cartItems));
     updateCartTotal();
-    updateCartNumber(); // Оновлення кількості товарів
-    addPackagingToTotal(); // Додавання ціни упакування до загальної вартості кошика
+    updateCartNumber();
+    addPackagingToTotal();
 }
 
 function updateCartTotal() {
@@ -116,15 +177,15 @@ function updateCartTotal() {
 function restoreCart(savedCartItems) {
     cartItemsContainer.html(savedCartItems.map(item => item.html).join(''));
     updateCartTotal();
-    updateCartNumber(); // Оновлення кількості товарів
-    addPackagingToTotal(); // Додавання ціни упакування до загальної вартості кошика
+    updateCartNumber();
+    addPackagingToTotal();
 }
 
 function addToCart() {
     var burgerImage = $('.img_block img').attr('src');
     var burgerName = $('.product_title').text();
     var burgerIngredients = getSelectedIngredients().replace(/, /g, '<br>');
-    var burgerQuantity = $('#quantity_card').val();
+    var burgerQuantity = $('#Quantity').val();
     var burgerPricePerUnit = parseFloat($('.price').attr('price')) || 0;
 
     var itemId = 'item_' + Date.now();
@@ -137,9 +198,9 @@ function addToCart() {
                     <h4 class="cart_product_title">${burgerName}</h4>
                     <p class="ingredients-list cart_ingredients">${burgerIngredients}</p>
                     <div class="product_quantity product_quantity_cart">
-                        <a href="#" class="minus minus_cart w-inline-block" id="minus_cart">-</a>
+                        <a href="#" class="minus_cart w-inline-block" id="minus_cart">-</a>
                         <input type="number" class="quantity quantity_cart w-input" maxlength="256" name="Quantity" data-name="Quantity" placeholder="" id="Quantity" value="${Math.max(burgerQuantity, 1)}" required="" min="1">
-                        <a href="#" class="plus plus_cart w-inline-block" id="plus_cart">+</a>
+                        <a href="#" class="plus_cart w-inline-block" id="plus_cart">+</a>
                     </div>
                 </div>
             </div>
@@ -155,7 +216,7 @@ function addToCart() {
 
     cartItemsContainer.append(cartItem);
     saveCart();
-    updateCartNumber(); // Оновлення кількості товарів
+    updateCartNumber();
 }
 
 function getSelectedIngredients() {
@@ -180,8 +241,8 @@ function removeFromCart(button) {
     $(`[data-item-id="${itemId}"]`).remove();
     saveCart();
     updateCartTotal();
-    updateCartNumber(); // Оновлення кількості товарів
-    addPackagingToTotal(); // Додавання ціни упакування до загальної вартості кошика
+    updateCartNumber();
+    addPackagingToTotal();
 }
 
 function decreaseQuantity(cartItem) {
@@ -193,8 +254,8 @@ function decreaseQuantity(cartItem) {
     updateCartPrice(cartItem, newQuantity);
     saveCart();
     updateCartTotal();
-    updateCartNumber(); // Оновлення кількості товарів
-    addPackagingToTotal(); // Додавання ціни упакування до загальної вартості кошика
+    updateCartNumber();
+    addPackagingToTotal();
 }
 
 function increaseQuantity(cartItem) {
@@ -206,8 +267,8 @@ function increaseQuantity(cartItem) {
     updateCartPrice(cartItem, newQuantity);
     saveCart();
     updateCartTotal();
-    updateCartNumber(); // Оновлення кількості товарів
-    addPackagingToTotal(); // Додавання ціни упакування до загальної вартості кошика
+    updateCartNumber();
+    addPackagingToTotal();
 }
 
 function addPackagingToTotal() {
@@ -215,10 +276,14 @@ function addPackagingToTotal() {
     if (packagingPriceElement.length > 0) {
         var packagingPrice = parseFloat(packagingPriceElement.text().replace('₴', '')) || 0;
         var currentTotalPrice = parseFloat($('.cart_total-price').text().replace('₴', '')) || 0;
-        var newTotalPrice = currentTotalPrice + packagingPrice;
+        var newTotalPrice = currentTotalPrice + packagingPrice * getCartItemCount();
 
         $('.cart_total-price').text(`${Math.floor(newTotalPrice)} ₴`);
     }
+}
+
+function getCartItemCount() {
+    return $('#cart-items').children('.cart-item').length;
 }
 
 $(document).ready(function () {
@@ -248,3 +313,4 @@ $(document).ready(function () {
         increaseQuantity(cartItem);
     });
 });
+
