@@ -136,7 +136,7 @@ function saveCart() {
         var totalPrice = initialPricePerUnit * quantity;
 
         if (!isNaN(totalPrice)) {
-            $(item).find('.cart_price').text(`${Math.floor(totalPrice)} ₴`);
+            $(item).find('.cart_price').text(`${formatPrice(totalPrice)} ₴`);
         } else {
             totalPrice = 0;
             $(item).find('.cart_price').text(`${totalPrice} ₴`);
@@ -150,8 +150,8 @@ function saveCart() {
 
     localStorage.setItem('cartItems', JSON.stringify(cartItems));
     updateCartTotal();
-    updateCartNumber(); // Оновлення кількості товарів
-    addPackagingToTotal(); // Додавання ціни упакування до загальної вартості кошика
+    updateCartNumber();
+    addPackagingToTotal();
 }
 
 function updateCartTotal() {
@@ -166,17 +166,23 @@ function updateCartTotal() {
     });
 
     if (total > 0) {
-        $('.cart_total-price').text(`${Math.floor(total)} ₴`);
+        $('.cart_total-price').text(`${formatPrice(total)} ₴`);
     } else {
         $('.cart_total-price').text(`0 ₴`);
     }
 }
 
+function formatPrice(price) {
+    // Вивести значення після крапки, якщо більше 0
+    var formattedPrice = price.toFixed(2);
+    return formattedPrice.endsWith('.00') ? formattedPrice.split('.')[0] : formattedPrice;
+}
+
 function restoreCart(savedCartItems) {
     cartItemsContainer.html(savedCartItems.map(item => item.html).join(''));
     updateCartTotal();
-    updateCartNumber(); // Оновлення кількості товарів
-    addPackagingToTotal(); // Додавання ціни упакування до загальної вартості кошика
+    updateCartNumber();
+    addPackagingToTotal();
 }
 
 function addToCart() {
@@ -203,7 +209,7 @@ function addToCart() {
                 </div>
             </div>
             <div class="cart-items_right">
-                <p class="cart_price">${Math.floor(burgerPricePerUnit * burgerQuantity)} ₴</p>
+                <p class="cart_price">${formatPrice(burgerPricePerUnit * burgerQuantity)} ₴</p>
                 <button class="remove-from-cart">Видалити</button>
                 <div class="burger-details"></div>
             </div>
@@ -214,7 +220,7 @@ function addToCart() {
 
     cartItemsContainer.append(cartItem);
     saveCart();
-    updateCartNumber(); // Оновлення кількості товарів
+    updateCartNumber();
 }
 
 function getSelectedIngredients() {
@@ -231,7 +237,7 @@ function getSelectedIngredients() {
 function updateCartPrice(cartItem, newQuantity) {
     var initialPricePerUnit = parseFloat(cartItem.data('initial-price'));
     var totalPrice = initialPricePerUnit * newQuantity;
-    cartItem.find('.cart_price').text(`${Math.floor(totalPrice)} ₴`);
+    cartItem.find('.cart_price').text(`${formatPrice(totalPrice)} ₴`);
 }
 
 function removeFromCart(button) {
@@ -239,8 +245,8 @@ function removeFromCart(button) {
     $(`[data-item-id="${itemId}"]`).remove();
     saveCart();
     updateCartTotal();
-    updateCartNumber(); // Оновлення кількості товарів
-    addPackagingToTotal(); // Додавання ціни упакування до загальної вартості кошика
+    updateCartNumber();
+    addPackagingToTotal();
 }
 
 function decreaseQuantity(cartItem) {
@@ -252,8 +258,8 @@ function decreaseQuantity(cartItem) {
     updateCartPrice(cartItem, newQuantity);
     saveCart();
     updateCartTotal();
-    updateCartNumber(); // Оновлення кількості товарів
-    addPackagingToTotal(); // Додавання ціни упакування до загальної вартості кошика
+    updateCartNumber();
+    addPackagingToTotal();
 }
 
 function increaseQuantity(cartItem) {
@@ -265,8 +271,8 @@ function increaseQuantity(cartItem) {
     updateCartPrice(cartItem, newQuantity);
     saveCart();
     updateCartTotal();
-    updateCartNumber(); // Оновлення кількості товарів
-    addPackagingToTotal(); // Додавання ціни упакування до загальної вартості кошика
+    updateCartNumber();
+    addPackagingToTotal();
 }
 
 function addPackagingToTotal() {
@@ -276,7 +282,7 @@ function addPackagingToTotal() {
         var currentTotalPrice = parseFloat($('.cart_total-price').text().replace('₴', '')) || 0;
         var newTotalPrice = currentTotalPrice + packagingPrice;
 
-        $('.cart_total-price').text(`${Math.floor(newTotalPrice)} ₴`);
+        $('.cart_total-price').text(`${formatPrice(newTotalPrice)} ₴`);
     }
 }
 
