@@ -241,6 +241,7 @@ function addToCart() {
     cartItemsContainer.append(cartItem);
     saveCart();
     updateCartNumber();
+    addPackagingToTotal();  // Додайте цей виклик, щоб оновити вартість упакування при додаванні товару
 }
 
 function getSelectedIngredients() {
