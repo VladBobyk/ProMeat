@@ -123,6 +123,7 @@ document.addEventListener('DOMContentLoaded', function () {
 // Код для кошика
 var cartItemsContainer;
 var savedCartItems;
+var initialPackagingPrice = parseFloat($('.packaging_price').attr('packaging')) || 0;
 
 function updateCartNumber() {
     var itemCount = $('#cart-items').children('.cart-item').length;
@@ -151,6 +152,7 @@ function saveCart() {
     localStorage.setItem('cartItems', JSON.stringify(cartItems));
     updateCartTotal();
     updateCartNumber();
+    updatePackagingPrice();
 }
 
 function updateCartTotal() {
@@ -172,12 +174,8 @@ function updateCartTotal() {
 }
 
 function calculatePackagingPrice() {
-    var packagingPriceElement = $('.packaging_price');
-    if (packagingPriceElement.length > 0) {
-        var packagingPrice = parseFloat(packagingPriceElement.text().replace('₴', '')) || 0;
-        return packagingPrice * getCartQuantity();
-    }
-    return 0;
+    var cartQuantity = getCartQuantity();
+    return initialPackagingPrice * cartQuantity;
 }
 
 function getCartQuantity() {
@@ -320,3 +318,4 @@ $(document).ready(function () {
         increaseQuantity(cartItem);
     });
 });
+
