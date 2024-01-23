@@ -123,7 +123,7 @@ document.addEventListener('DOMContentLoaded', function () {
 // Код для кошика
 var cartItemsContainer;
 var savedCartItems;
-var initialPackagingPrice = parseFloat($('.packaging_price').attr('packaging')) || 0;
+var packagingPricePerUnit = parseFloat($('.packaging_price').attr('packaging')) || 0;
 
 function updateCartNumber() {
     var itemCount = $('#cart-items').children('.cart-item').length;
@@ -145,13 +145,15 @@ function saveCart() {
 
         return {
             html: item.outerHTML,
-            initialPricePerUnit: initialPricePerUnit
+            initialPricePerUnit: initialPricePerUnit,
+            quantity: quantity
         };
     });
 
     localStorage.setItem('cartItems', JSON.stringify(cartItems));
     updateCartTotal();
     updateCartNumber();
+    addPackagingToTotal();
 }
 
 function updateCartTotal() {
@@ -178,12 +180,9 @@ function updateCartTotal() {
 }
 
 function calculatePackagingPrice() {
-    var cartQuantity = getCartQuantity();
-    return initialPackagingPrice * cartQuantity;
-}
-
-function getCartQuantity() {
-    return $('#cart-items').children('.cart-item').length;
+    var cartItems = JSON.parse(localStorage.getItem('cartItems')) || [];
+    var totalQuantity = cartItems.reduce((total, item) => total + item.quantity, 0);
+    return packagingPricePerUnit * totalQuantity;
 }
 
 function formatPrice(price) {
@@ -309,4 +308,3 @@ $(document).ready(function () {
         increaseQuantity(cartItem);
     });
 });
-
