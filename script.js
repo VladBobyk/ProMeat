@@ -62,7 +62,6 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 <!-- Код для карточки товару -->
-<script>
 document.addEventListener('DOMContentLoaded', function () {
     var checkboxes = document.querySelectorAll('input[type="checkbox"][price_add]');
     var priceElement = document.querySelector('.price');
