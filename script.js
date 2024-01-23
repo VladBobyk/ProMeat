@@ -152,7 +152,6 @@ function saveCart() {
     localStorage.setItem('cartItems', JSON.stringify(cartItems));
     updateCartTotal();
     updateCartNumber();
-    updatePackagingPrice();
 }
 
 function updateCartTotal() {
@@ -166,10 +165,15 @@ function updateCartTotal() {
         }
     });
 
-    if (total > 0) {
-        $('.cart_total-price').text(`${formatPrice(total + calculatePackagingPrice())} ₴`);
+    var packagingPrice = calculatePackagingPrice();
+    var totalPriceWithPackaging = total + packagingPrice;
+
+    if (totalPriceWithPackaging > 0) {
+        $('.cart_total-price').text(`${formatPrice(totalPriceWithPackaging)} ₴`);
+        $('.packaging_price').text(`${formatPrice(packagingPrice)} ₴`);
     } else {
         $('.cart_total-price').text(`0 ₴`);
+        $('.packaging_price').text(`0 ₴`);
     }
 }
 
@@ -182,11 +186,6 @@ function getCartQuantity() {
     return $('#cart-items').children('.cart-item').length;
 }
 
-function updatePackagingPrice() {
-    var packagingPrice = calculatePackagingPrice();
-    $('.packaging_price').text(`${formatPrice(packagingPrice)} ₴`);
-}
-
 function formatPrice(price) {
     // Вивести значення після крапки, якщо більше 0
     var formattedPrice = price.toFixed(2);
@@ -197,7 +196,6 @@ function restoreCart(savedCartItems) {
     cartItemsContainer.html(savedCartItems.map(item => item.html).join(''));
     updateCartTotal();
     updateCartNumber();
-    updatePackagingPrice();
 }
 
 function addToCart() {
@@ -236,7 +234,6 @@ function addToCart() {
     cartItemsContainer.append(cartItem);
     saveCart();
     updateCartNumber();
-    updatePackagingPrice();
 }
 
 function getSelectedIngredients() {
@@ -261,8 +258,6 @@ function removeFromCart(button) {
     $(`[data-item-id="${itemId}"]`).remove();
     saveCart();
     updateCartTotal();
-    updateCartNumber();
-    updatePackagingPrice();
 }
 
 function decreaseQuantity(cartItem) {
@@ -274,8 +269,6 @@ function decreaseQuantity(cartItem) {
     updateCartPrice(cartItem, newQuantity);
     saveCart();
     updateCartTotal();
-    updateCartNumber();
-    updatePackagingPrice();
 }
 
 function increaseQuantity(cartItem) {
@@ -287,8 +280,6 @@ function increaseQuantity(cartItem) {
     updateCartPrice(cartItem, newQuantity);
     saveCart();
     updateCartTotal();
-    updateCartNumber();
-    updatePackagingPrice();
 }
 
 $(document).ready(function () {
@@ -318,3 +309,4 @@ $(document).ready(function () {
         increaseQuantity(cartItem);
     });
 });
+
