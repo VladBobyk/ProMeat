@@ -151,7 +151,6 @@ function saveCart() {
     localStorage.setItem('cartItems', JSON.stringify(cartItems));
     updateCartTotal();
     updateCartNumber();
-    addPackagingToTotal();
 }
 
 function updateCartTotal() {
@@ -166,10 +165,28 @@ function updateCartTotal() {
     });
 
     if (total > 0) {
-        $('.cart_total-price').text(`${formatPrice(total)} ₴`);
+        $('.cart_total-price').text(`${formatPrice(total + calculatePackagingPrice())} ₴`);
     } else {
         $('.cart_total-price').text(`0 ₴`);
     }
+}
+
+function calculatePackagingPrice() {
+    var packagingPriceElement = $('.packaging_price');
+    if (packagingPriceElement.length > 0) {
+        var packagingPrice = parseFloat(packagingPriceElement.text().replace('₴', '')) || 0;
+        return packagingPrice * getCartQuantity();
+    }
+    return 0;
+}
+
+function getCartQuantity() {
+    return $('#cart-items').children('.cart-item').length;
+}
+
+function updatePackagingPrice() {
+    var packagingPrice = calculatePackagingPrice();
+    $('.packaging_price').text(`${formatPrice(packagingPrice)} ₴`);
 }
 
 function formatPrice(price) {
@@ -182,7 +199,7 @@ function restoreCart(savedCartItems) {
     cartItemsContainer.html(savedCartItems.map(item => item.html).join(''));
     updateCartTotal();
     updateCartNumber();
-    addPackagingToTotal();
+    updatePackagingPrice();
 }
 
 function addToCart() {
@@ -221,6 +238,7 @@ function addToCart() {
     cartItemsContainer.append(cartItem);
     saveCart();
     updateCartNumber();
+    updatePackagingPrice();
 }
 
 function getSelectedIngredients() {
@@ -246,7 +264,7 @@ function removeFromCart(button) {
     saveCart();
     updateCartTotal();
     updateCartNumber();
-    addPackagingToTotal();
+    updatePackagingPrice();
 }
 
 function decreaseQuantity(cartItem) {
@@ -259,7 +277,7 @@ function decreaseQuantity(cartItem) {
     saveCart();
     updateCartTotal();
     updateCartNumber();
-    addPackagingToTotal();
+    updatePackagingPrice();
 }
 
 function increaseQuantity(cartItem) {
@@ -272,18 +290,7 @@ function increaseQuantity(cartItem) {
     saveCart();
     updateCartTotal();
     updateCartNumber();
-    addPackagingToTotal();
-}
-
-function addPackagingToTotal() {
-    var packagingPriceElement = $('.packaging_price');
-    if (packagingPriceElement.length > 0) {
-        var packagingPrice = parseFloat(packagingPriceElement.text().replace('₴', '')) || 0;
-        var currentTotalPrice = parseFloat($('.cart_total-price').text().replace('₴', '')) || 0;
-        var newTotalPrice = currentTotalPrice + packagingPrice;
-
-        $('.cart_total-price').text(`${formatPrice(newTotalPrice)} ₴`);
-    }
+    updatePackagingPrice();
 }
 
 $(document).ready(function () {
