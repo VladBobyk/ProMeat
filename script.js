@@ -123,7 +123,6 @@ document.addEventListener('DOMContentLoaded', function () {
 // Код для кошика
 var cartItemsContainer;
 var savedCartItems;
-var packagingPricePerUnit = parseFloat($('.packaging_price').attr('packaging')) || 0;
 
 function updateCartNumber() {
     var itemCount = $('#cart-items').children('.cart-item').length;
@@ -153,7 +152,6 @@ function saveCart() {
     localStorage.setItem('cartItems', JSON.stringify(cartItems));
     updateCartTotal();
     updateCartNumber();
-    addPackagingToTotal();
 }
 
 function updateCartTotal() {
@@ -180,29 +178,10 @@ function formatPrice(price) {
     return formattedPrice.endsWith('.00') ? formattedPrice.split('.')[0] : formattedPrice;
 }
 
-function calculatePackagingPrice() {
-    var cartItems = JSON.parse(localStorage.getItem('cartItems')) || [];
-    var totalQuantity = cartItems.reduce((total, item) => total + item.quantity, 0);
-    return packagingPricePerUnit * totalQuantity;
-}
-
-function addPackagingToTotal() {
-    var packagingPriceElement = $('.packaging_price');
-    if (packagingPriceElement.length > 0) {
-        var packagingPrice = calculatePackagingPrice();
-        var currentTotalPrice = parseFloat($('.cart_total-price').text().replace('₴', '')) || 0;
-        var newTotalPrice = currentTotalPrice + packagingPrice;
-
-        $('.cart_total-price').text(`${formatPrice(newTotalPrice)} ₴`);
-        $('.packaging_price').text(`${formatPrice(packagingPrice)} ₴`);
-    }
-}
-
 function restoreCart(savedCartItems) {
     cartItemsContainer.html(savedCartItems.map(item => item.html).join(''));
     updateCartTotal();
     updateCartNumber();
-    addPackagingToTotal();
 }
 
 function addToCart() {
@@ -266,7 +245,6 @@ function removeFromCart(button) {
     saveCart();
     updateCartTotal();
     updateCartNumber();
-    addPackagingToTotal();
 }
 
 function decreaseQuantity(cartItem) {
@@ -279,7 +257,6 @@ function decreaseQuantity(cartItem) {
     saveCart();
     updateCartTotal();
     updateCartNumber();
-    addPackagingToTotal();
 }
 
 function increaseQuantity(cartItem) {
@@ -292,7 +269,6 @@ function increaseQuantity(cartItem) {
     saveCart();
     updateCartTotal();
     updateCartNumber();
-    addPackagingToTotal();
 }
 
 $(document).ready(function () {
@@ -322,3 +298,4 @@ $(document).ready(function () {
         increaseQuantity(cartItem);
     });
 });
+
