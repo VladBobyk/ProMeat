@@ -123,6 +123,7 @@ document.addEventListener('DOMContentLoaded', function () {
 // Код для кошика
 var cartItemsContainer;
 var savedCartItems;
+var packagingPricePerUnit = parseFloat($('.packaging_price').attr('packaging')) || 0;
 
 function updateCartNumber() {
     var itemCount = $('#cart-items').children('.cart-item').length;
@@ -152,6 +153,7 @@ function saveCart() {
     localStorage.setItem('cartItems', JSON.stringify(cartItems));
     updateCartTotal();
     updateCartNumber();
+    addPackagingToTotal();
 }
 
 function updateCartTotal() {
@@ -178,10 +180,29 @@ function formatPrice(price) {
     return formattedPrice.endsWith('.00') ? formattedPrice.split('.')[0] : formattedPrice;
 }
 
+function calculatePackagingPrice() {
+    var cartItems = JSON.parse(localStorage.getItem('cartItems')) || [];
+    var totalQuantity = cartItems.reduce((total, item) => total + item.quantity, 0);
+    return packagingPricePerUnit * totalQuantity;
+}
+
+function addPackagingToTotal() {
+    var packagingPriceElement = $('.packaging_price');
+    if (packagingPriceElement.length > 0) {
+        var packagingPrice = calculatePackagingPrice();
+        var currentTotalPrice = parseFloat($('.cart_total-price').text().replace('₴', '')) || 0;
+        var newTotalPrice = currentTotalPrice + packagingPrice;
+
+        $('.cart_total-price').text(`${formatPrice(newTotalPrice)} ₴`);
+        $('.packaging_price').text(`${formatPrice(packagingPrice)} ₴`);
+    }
+}
+
 function restoreCart(savedCartItems) {
     cartItemsContainer.html(savedCartItems.map(item => item.html).join(''));
     updateCartTotal();
     updateCartNumber();
+    addPackagingToTotal();
 }
 
 function addToCart() {
@@ -271,6 +292,15 @@ function increaseQuantity(cartItem) {
     updateCartNumber();
 }
 
+function togglePackagingVisibility() {
+    var selectedPackaging = $('input[name="packaging"]:checked').val();
+    if (selectedPackaging === 'У закладі') {
+        $('.packaging').hide();
+    } else {
+        $('.packaging').show();
+    }
+}
+
 $(document).ready(function () {
     cartItemsContainer = $('#cart-items');
     savedCartItems = JSON.parse(localStorage.getItem('cartItems')) || [];
@@ -297,5 +327,14 @@ $(document).ready(function () {
         var cartItem = $(this).closest('.cart-item');
         increaseQuantity(cartItem);
     });
+
+    $('input[name="packaging"]').on('change', function () {
+        togglePackagingVisibility();
+        addPackagingToTotal();
+    });
 });
+
+// Викликемо togglePackagingVisibility() при завантаженні сторінки, щоб встановити видимість відповідно до вибраної опції
+togglePackagingVisibility();
+
 
