@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     function updatePrice() {
-        var totalPrice = parseFloat(priceElement.textContent.replace(' ₴', '')) || 0;
+        var totalPrice = parseFloat(priceElement.getAttribute('price')) || 0;
 
         checkboxes.forEach(function (checkbox) {
             if (checkbox.checked) {
@@ -57,8 +57,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Оновлення вмісту елемента з ціною та атрибуту price
         priceElement.textContent = (calculatedPrice > 0) ? calculatedPrice.toFixed(2) + ' ₴' : '0 ₴';
+        priceElement.setAttribute('price', calculatedPrice);
     }
 });
+
 
 
 
