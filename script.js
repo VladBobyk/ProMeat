@@ -60,7 +60,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Оновлення вмісту елемента з ціною та атрибуту price
         priceElement.textContent = (calculatedPrice > 0) ? calculatedPrice.toFixed(2).split('.')[1] === '00' ? calculatedPrice.toFixed(0) + ' ₴' : calculatedPrice.toFixed(2) + ' ₴' : '0 ₴';
-        priceElement.setAttribute('price', totalPrice.toFixed(2));
+        priceElement.setAttribute('price', calculatedPrice.toFixed(2));
     }
 });
 
