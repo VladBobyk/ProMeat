@@ -55,11 +55,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 totalPrice += priceAdd;
             }
         });
+
+        var calculatedPrice = totalPrice * quantityInputCard.value;
+
         // Оновлення вмісту елемента з ціною та атрибуту price
-        priceElement.textContent = (totalPrice * quantityInputCard.value).toFixed(0) + ' ₴';
+        priceElement.textContent = (calculatedPrice > 0) ? calculatedPrice.toFixed(2).split('.')[1] === '00' ? calculatedPrice.toFixed(0) + ' ₴' : calculatedPrice.toFixed(2) + ' ₴' : '0 ₴';
         priceElement.setAttribute('price', totalPrice.toFixed(2));
     }
 });
+
 
 // Код для карточки товару
 document.addEventListener('DOMContentLoaded', function () {
