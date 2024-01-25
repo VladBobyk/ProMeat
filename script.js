@@ -65,64 +65,7 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 
-// Код для карточки товару
-document.addEventListener('DOMContentLoaded', function () {
-    var checkboxes = document.querySelectorAll('input[type="checkbox"][price_add]');
-    var priceElement = document.querySelector('.price');
-    var quantityInput = document.getElementById('Quantity');
 
-    var initialPrice = parseFloat(priceElement.getAttribute('price')) || 0;
-
-    checkboxes.forEach(function (checkbox) {
-        checkbox.addEventListener('change', function () {
-            updatePrice();
-        });
-    });
-
-    quantityInput.addEventListener('input', function () {
-        updatePrice();
-    });
-
-    $('.plus').click(function () {
-        var input = $('#Quantity');
-        if (input.val() < 10) {
-            input.val(+input.val() + 1).trigger('input');
-        }
-    });
-
-    $('.minus').click(function () {
-        var input = $('#Quantity');
-        if (input.val() > 1) {
-            input.val(+input.val() - 1).trigger('input');
-        }
-    });
-
-    $('input[type="number"]').val(1);
-
-    $('input[type="number"]').on('input', function () {
-        if ($(this).val() < 1) {
-            $(this).val(1);
-        }
-    });
-
-    $('input[type="number"]').on('input', function () {
-        updatePrice();
-    });
-
-    function updatePrice() {
-        var totalPrice = initialPrice;
-
-        checkboxes.forEach(function (checkbox) {
-            if (checkbox.checked) {
-                var priceAdd = parseFloat(checkbox.getAttribute('price_add')) || 0;
-                totalPrice += priceAdd;
-            }
-        });
-
-        priceElement.textContent = (totalPrice * quantityInput.value).toFixed(0) + ' ₴';
-        priceElement.setAttribute('price', totalPrice.toFixed(2));
-    }
-});
 
 // Код для кошика
 var cartItemsContainer;
