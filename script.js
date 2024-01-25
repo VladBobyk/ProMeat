@@ -59,8 +59,7 @@ document.addEventListener('DOMContentLoaded', function () {
         var calculatedPrice = totalPrice * quantityInputCard.value;
 
         // Оновлення вмісту елемента з ціною та атрибуту price
-        var formattedPrice = calculatedPrice.toFixed(2);
-        priceElement.textContent = (calculatedPrice > 0) ? (formattedPrice.endsWith('.00') ? formattedPrice.split('.')[0] : formattedPrice) + ' ₴' : '0 ₴';
+        priceElement.textContent = (calculatedPrice > 0) ? calculatedPrice.toFixed(2) + ' ₴' : '0 ₴';
         priceElement.setAttribute('price', calculatedPrice.toFixed(2));
     }
 });
