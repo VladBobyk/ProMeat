@@ -56,10 +56,11 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
         // Оновлення вмісту елемента з ціною та атрибуту price
-        priceElement.textContent = (totalPrice * quantityInputCard.value).toFixed(0) + ' ₴';
+        priceElement.textContent = (totalPrice * quantityInputCard.value).toFixed(2) + ' ₴';
         priceElement.setAttribute('price', totalPrice.toFixed(2));
     }
 });
+
 
 
 
