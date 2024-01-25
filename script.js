@@ -67,6 +67,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 
+
 // Код для кошика
 var cartItemsContainer;
 var savedCartItems;
