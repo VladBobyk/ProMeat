@@ -47,21 +47,22 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     function updatePrice() {
-        var totalPrice = initialPrice;
+    var totalPrice = initialPrice;
 
-        checkboxes.forEach(function (checkbox) {
-            if (checkbox.checked) {
-                var priceAdd = parseFloat(checkbox.getAttribute('price_add')) || 0;
-                totalPrice += priceAdd;
-            }
-        });
+    checkboxes.forEach(function (checkbox) {
+        if (checkbox.checked) {
+            var priceAdd = parseFloat(checkbox.getAttribute('price_add')) || 0;
+            totalPrice += priceAdd;
+        }
+    });
 
-        var calculatedPrice = totalPrice * quantityInputCard.value;
+    var calculatedPrice = totalPrice * quantityInputCard.value;
 
-        // Оновлення вмісту елемента з ціною та атрибуту price
-        priceElement.textContent = (calculatedPrice > 0) ? calculatedPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₴' : '0 ₴';
-        priceElement.setAttribute('price', calculatedPrice);
-    }
+    // Оновлення вмісту елемента з ціною та атрибуту price
+    priceElement.textContent = (calculatedPrice > 0) ? calculatedPrice.toFixed(2) + ' ₴' : '0 ₴';
+    priceElement.setAttribute('price', calculatedPrice);
+}
+
 });
 
 
