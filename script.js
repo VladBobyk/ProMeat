@@ -4,8 +4,8 @@ document.addEventListener('DOMContentLoaded', function () {
     var priceElement = document.querySelector('.price');
     var quantityInputCard = document.getElementById('quantity_card');
 
-    // Отримання початкової ціни із атрибуту price
-    var initialPrice = parseFloat(priceElement.getAttribute('price')) || 0;
+    // Отримання початкової ціни із атрибуту price, заміна коми на крапку
+    var initialPrice = parseFloat(priceElement.getAttribute('price').replace(',', '.')) || 0;
 
     checkboxes.forEach(function (checkbox) {
         checkbox.addEventListener('change', function () {
@@ -60,6 +60,7 @@ document.addEventListener('DOMContentLoaded', function () {
         priceElement.setAttribute('price', totalPrice.toFixed(2));
     }
 });
+
 
 
 
