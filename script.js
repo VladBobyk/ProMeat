@@ -248,3 +248,124 @@ $(document).ready(function () {
         increaseQuantity(cartItem);
     });
 });
+
+
+
+
+
+// Код для адреси
+        document.addEventListener('DOMContentLoaded', function () {
+            var deliveryForm = document.getElementById('wf-form-delivery');
+            var addressElement = document.getElementById('address');
+
+            // Слухач подій для форми
+            deliveryForm.addEventListener('change', function () {
+                var deliveryMethod = document.querySelector('input[name="Delivery-method"]:checked');
+
+                if (deliveryMethod && deliveryMethod.value === 'Самовивіз') {
+                    addressElement.style.display = 'flex'; // Показати елемент
+                } else {
+                    addressElement.style.display = 'none'; // Приховати елемент
+                }
+            });
+        });
+
+
+
+// Код для выдправки форми
+document.getElementById('submit').addEventListener('click', function(event) {
+    event.preventDefault();
+
+    var formData = new FormData(document.getElementById('wf-form-delivery'));
+    var productsData = new Set();
+
+    var cartItems = document.querySelectorAll('.cart-item');
+    var productsMessage = Array.from(cartItems).map(function(cartItem) {
+        var title = cartItem.querySelector('.cart_product_title').innerText;
+        var ingredientsList = cartItem.querySelector('.ingredients-list');
+        var quantity = cartItem.querySelector('.quantity').value;
+
+        var productKey = JSON.stringify({
+            title: title,
+            ingredients: ingredientsList.innerHTML,
+            quantity: quantity
+        });
+
+        if (!productsData.has(productKey)) {
+            productsData.add(productKey);
+
+            return `${title} х${quantity}\n*Додаткові інгредієнти:*\n${formatIngredients(ingredientsList.innerHTML)}\n`;
+        }
+
+        return ''; // Повертаємо порожній рядок для дублікатів
+    }).join('\n');
+
+    // Отримання поточної дати і часу
+    var currentTime = new Date().toLocaleString();
+
+    // Отримання значення елемента .cart_total-price
+    var totalAmount = document.querySelector('.cart_total-price').innerText;
+
+    // Отримання значення поля "Будинок" по атрибуту data-name
+    var house = formData.get('House');
+
+    // Отримання значення поля "Адреса ресторану" по атрибуту data-name
+    var restaurantAddress = formData.get('Address-restaurant');
+
+    // Додаємо переноси рядків в тексті товарів і з форми
+    productsMessage = productsMessage.replace(/\n/g, '\n');
+    var formDataText = [
+        `💵*Сума чека:* ${totalAmount}`,
+        `🎫*Ім'я:* ${formData.get('Name')}`,
+        `📞*Телефон:* ${formData.get('Phone')}`,
+        `✍️*Додаткова інформація:* ${formData.get('Notes-to-orders')}`,
+        `🏠*Місто:* ${formData.get('City')}`,
+        `*Вулиця:* ${formData.get('Street')}`,
+        `*Будинок:* ${house}`,
+        `*Під'їзд:* ${formData.get('Entrance')}`,
+        `🚚*Спосіб доставки:* ${formData.get('Delivery-method')}`,
+        `🏠*Адреса ресторану:* ${restaurantAddress}`,
+        `💵*Спосіб оплати:* ${formData.get('Payment-method')}`
+        
+    ].join('\n');
+
+    var botToken = '6967516624:AAF1Go1AAXrGf1Q0CV4TqOE4_2LEUZEf4m0';
+    var chatID = '-1002019905494';
+
+    axios.post('https://api.telegram.org/bot' + botToken + '/sendMessage', {
+        chat_id: chatID,
+        text: `🕔: ${currentTime}\n🛒Замовлення:\n${productsMessage}\nДані із форми:\n${formDataText}`,
+        parse_mode: 'Markdown'
+    })
+    .then(function (response) {
+        console.log('Дані успішно відправлені в телеграм', response);
+        // Очищення полів форми після вдалої відправки
+        document.getElementById('wf-form-delivery').reset();
+        // Очищення кошика
+        var cartItems = document.querySelectorAll('.cart-item');
+        cartItems.forEach(function(item) {
+            item.remove();
+        });
+        // Перенаправлення на іншу сторінку
+        window.location.href = 'https://pro-meat.webflow.io/order-confirmation';
+    })
+    .catch(function (error) {
+        console.error('Сталася помилка під час відправки даних в телеграм', error);
+    });
+});
+
+
+
+
+// Функція для форматування інгредієнтів
+function formatIngredients(ingredientsHTML) {
+    // Видаляємо зайві пробіли навколо тегів <br> та форматуємо інгредієнти
+    var cleanedIngredients = ingredientsHTML.replace(/(\+|\d|₴)/g, '').trim();
+    var ingredientsArray = cleanedIngredients.split('<br>'); // Розділяємо інгредієнти по тегу <br>
+    var formattedIngredients = ingredientsArray.map(function(ingredient) {
+        return `• ${ingredient.trim()}`; // Додаємо кожен інгредієнт у форматі списку
+    }).join('\n'); // Об'єднуємо всі інгредієнти з нового рядка
+
+    return formattedIngredients;
+}
+
