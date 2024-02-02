@@ -277,3 +277,57 @@ $(document).ready(function () {
             }
         });
     });
+
+
+
+
+
+// Дні тисжня
+document.addEventListener('DOMContentLoaded', function() {
+    var currentDate = new Date();
+    var currentDay = currentDate.getDay(); // Отримуємо поточний день тижня (0 - неділя, 1 - понеділок, ..., 6 - субота)
+    var nextSaturday = new Date(currentDate); // Копіюємо поточну дату
+
+    // Знаходимо наступну суботу
+    nextSaturday.setDate(currentDate.getDate() + (6 - currentDay + 7) % 7);
+
+    var currentHour = currentDate.getHours();
+    var toppingsBlock = document.querySelector('.toppings_block');
+    var productContent = document.querySelectorAll('.product_content');
+
+    if (toppingsBlock && productContent) {
+        if (currentHour >= 10 && currentHour < 19) {
+            // Показуємо блок з топінгами
+            toppingsBlock.style.display = 'block';
+            // Ховаємо інформаційний блок
+            hideInformationBlock();
+        } else {
+            // Ховаємо блок з топінгами
+            toppingsBlock.style.display = 'none';
+            // Показуємо інформаційний блок
+            showInformationBlock(nextSaturday);
+        }
+    }
+
+    function hideInformationBlock() {
+        var informationBlock = document.querySelector('.information-block');
+        if (informationBlock) {
+            informationBlock.style.display = 'none';
+        }
+    }
+
+    function showInformationBlock(nextSaturday) {
+        var nextDayOfWeek = 'Субота'; // Українською: 'Субота'
+        var informationText = 'Замовлення їжі зараз закрито, будь ласка, повертайтесь до нас: <br><strong class="bold-text">В ' + nextDayOfWeek + ' з 10:00 до 19:00</strong>';
+        var newInformationBlock = document.createElement('div');
+        newInformationBlock.classList.add('information-block');
+        newInformationBlock.innerHTML = '<p class="description_black information-block_text">' + informationText + '</p>';
+
+        // Вставляємо інформаційний блок в кінець кожного елемента з класом .product_content
+        if (productContent && productContent.length > 0) {
+            productContent.forEach(function(element) {
+                element.appendChild(newInformationBlock.cloneNode(true));
+            });
+        }
+    }
+});
