@@ -254,27 +254,18 @@ $(document).ready(function () {
 
 
 // Код для адреси
-        document.addEventListener('DOMContentLoaded', function () {
-            var deliveryForm = document.getElementById('delivery-form');
-            var addressElement = document.getElementById('address');
-            var restaurantElement = document.getElementById('restaurant');
+    document.addEventListener('DOMContentLoaded', function () {
+        var deliveryForm = document.getElementById('delivery-form');
+        var addressElement = document.getElementById('address');
 
-            // Слухач подій для форми
-            deliveryForm.addEventListener('change', function () {
-                var deliveryMethod = document.querySelector('input[name="Delivery-method"]:checked');
+        // Слухач подій для форми
+        deliveryForm.addEventListener('change', function () {
+            var deliveryMethod = document.querySelector('input[name="Delivery-method"]:checked');
 
-                if (deliveryMethod) {
-                    if (deliveryMethod.value === 'Самовивіз' || deliveryMethod.value === 'У закладі') {
-                        addressElement.style.display = 'block'; // Показати адресу
-                    } else {
-                        addressElement.style.display = 'none'; // Приховати адресу
-                    }
-
-                    if (deliveryMethod.value === 'У закладі') {
-                        restaurantElement.style.display = 'block'; // Показати ресторан
-                    } else {
-                        restaurantElement.style.display = 'none'; // Приховати ресторан
-                    }
-                }
-            });
+            if (deliveryMethod && (deliveryMethod.value === 'Самовивіз' || deliveryMethod.value === 'У закладі')) {
+                addressElement.style.display = 'flex'; // Показати елемент
+            } else {
+                addressElement.style.display = 'none'; // Приховати елемент
+            }
         });
+    });
