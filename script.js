@@ -134,43 +134,7 @@ function restoreCart(savedCartItems) {
     updateCartNumber();
 }
 
-function addToCart() {
-    var burgerImage = $('.img_block img').attr('src');
-    var burgerName = $('.product_title').text();
-    var burgerIngredients = getSelectedIngredients().replace(/, /g, '<br>');
-    var burgerQuantity = $('#quantity_card').val();
-    var burgerPricePerUnit = parseFloat($('.price').attr('price')) || 0;
-
-    var itemId = 'item_' + Date.now();
-
-    var cartItem = `
-        <div class="cart-item" data-item-id="${itemId}" data-initial-price="${burgerPricePerUnit}">
-            <div class="cart-items_left">
-                <img class="burger-image" src="${burgerImage}" alt="${burgerName}">
-                <div class="cart_info">
-                    <h4 class="cart_product_title">${burgerName}</h4>
-                    <p class="ingredients-list cart_ingredients">${burgerIngredients}</p>
-                    <div class="product_quantity product_quantity_cart">
-                        <a href="#" class="minus minus_cart w-inline-block" id="minus_cart">-</a>
-                        <input type="number" class="quantity quantity_cart w-input" maxlength="256" name="Quantity" data-name="Quantity" placeholder="" id="Quantity" value="${Math.max(burgerQuantity, 1)}" required="" min="1">
-                        <a href="#" class="plus plus_cart w-inline-block" id="plus_cart">+</a>
-                    </div>
-                </div>
-            </div>
-            <div class="cart-items_right">
-                <p class="cart_price">${formatPrice(burgerPricePerUnit * burgerQuantity)} ₴</p>
-                <button class="remove-from-cart">Видалити</button>
-                <div class="burger-details"></div>
-            </div>
-        </div>
-    `;
-
-    console.log('Burger Ingredients:', burgerIngredients);
-
-    cartItemsContainer.append(cartItem);
-    saveCart();
-    updateCartNumber();
-}
+add_card
 
 function getSelectedIngredients() {
     var selectedIngredients = [];
