@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     $('.plus').click(function () {
-        if (quantityInputCard.value < 10) {
+        if (quantityInputCard.value < 100) {
             quantityInputCard.value = +quantityInputCard.value + 1;
             updatePrice();
         }
@@ -82,7 +82,7 @@ function updateCartNumber() {
 function saveCart() {
     var cartItems = Array.from(cartItemsContainer.children()).map(item => {
         var initialPricePerUnit = parseFloat($(item).data('initial-price')) || 0;
-        var quantity = parseInt($(item).find('.quantity_cart').val(), 10) || 1;
+        var quantity = parseInt($(item).find('.quantity_cart').val(), 100) || 1;
         var totalPrice = initialPricePerUnit * quantity;
 
         if (!isNaN(totalPrice)) {
