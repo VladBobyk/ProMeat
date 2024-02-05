@@ -283,7 +283,6 @@ $(document).ready(function () {
 
 
 // Дні тисжня
-/*
 document.addEventListener('DOMContentLoaded', function() {
     var currentDate = new Date();
     var currentDay = currentDate.getDay(); // Отримуємо поточний день тижня (0 - неділя, 1 - понеділок, ..., 6 - субота)
@@ -332,4 +331,3 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 });
-*/
