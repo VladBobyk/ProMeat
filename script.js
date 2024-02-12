@@ -71,7 +71,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 // Код для кошика
-  // Код для кошика
+// Код для кошика
 var cartItemsContainer;
 var savedCartItems;
 var originalTotalPrice = 0;
@@ -120,14 +120,14 @@ function updateCartTotal() {
 
     if (total > 0) {
         $('.cart_total-price').text(`${formatPrice(total)} ₴`);
-        originalTotalPrice = total; // Зберегти початкову загальну ціну
+        originalTotalPrice = total; // Зберегти початкову загальну вартість
     } else {
         $('.cart_total-price').text(`0 ₴`);
     }
 }
 
 function formatPrice(price) {
-    // Показувати значення після коми, якщо воно більше 0
+    // Відображення значення після крапки, якщо воно більше 0
     var formattedPrice = price.toFixed(2);
     return formattedPrice.endsWith('.00') ? formattedPrice.split('.')[0] : formattedPrice;
 }
@@ -175,7 +175,7 @@ function addToCart() {
     saveCart();
     updateCartNumber();
 
-    // Змінити текст кнопки на "Додано в кошик"
+    // Змінити текст кнопки на "Added to Cart"
     $('.add_card').text('Додано в кошик');
 
     // Повернути текст кнопки через 5 секунд
@@ -260,46 +260,47 @@ $(document).ready(function () {
         increaseQuantity(cartItem);
     });
 
-    // Обробник подій для поля введення промокоду
-    $('#promo-code').on('input', function () {
+    // Обробник події для кнопки застосування промокоду
+    $('#button-promo').on('click', function() {
         applyPromoCode();
     });
 
-    // Функція для застосування промокоду
+    // Функція застосування промокоду
     function applyPromoCode() {
         var promoCodeValue = $('#promo-code').val().trim().toUpperCase();
 
-        // Перевірка, чи промокод порожній
+        // Перевірка на пустий промокод
         if (promoCodeValue === '') {
             $('.cart_total-price').text(`${formatPrice(originalTotalPrice)} ₴`);
-            $('.w-form-fail').hide(); // Приховати повідомлення про невдачу
+            $('.w-form-fail').hide(); // Приховати повідомлення про помилку
             promoCodeApplied = false;
             return; // Вихід з функції
         }
 
         // Перевірка промокоду та застосування знижки
-        if (promoCodeValue === 'meat2024') { // Замінити 'YOUR_PROMO_CODE' на ваш фактичний промокод
+        if (promoCodeValue === 'MEAT2024') {
             var cartTotalPrice = parseFloat($('.cart_total-price').text().replace('₴', '')) || 0;
             var discount = cartTotalPrice * 0.1; // Знижка 10%
 
-            // Застосування знижки до загальної ціни кошика
+            // Застосування знижки до загальної вартості кошика
             var newTotalPrice = cartTotalPrice - discount;
             $('.cart_total-price').text(`${formatPrice(newTotalPrice)} ₴`);
-            $('.w-form-fail').hide(); // Приховати повідомлення про невдачу
+            $('.w-form-fail').hide(); // Приховати повідомлення про помилку
             promoCodeApplied = true;
         } else {
-            $('.w-form-fail').hide(); // Приховати повідомлення про невдачу
+            $('.w-form-fail').show(); // Показати повідомлення про помилку
             promoCodeApplied = false;
         }
     }
 
-    // Заборонити вставку тексту кілька разів у поле введення промокоду
+    // Запобігання вставленню тексту кілька разів в поле введення промокоду
     $('#promo-code').on('paste', function (e) {
         if (promoCodeApplied) {
             e.preventDefault();
         }
     });
 });
+
 
 
 
