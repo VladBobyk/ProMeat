@@ -288,7 +288,7 @@ $(document).ready(function () {
             $('.w-form-fail').hide(); // Приховати повідомлення про невдачу
             promoCodeApplied = true;
         } else {
-            $('.w-form-fail').show(); // Показати повідомлення про невдачу
+            $('.w-form-fail').hide(); // Приховати повідомлення про невдачу
             promoCodeApplied = false;
         }
     }
