@@ -266,30 +266,30 @@ $(document).ready(function () {
     });
 
     // Функція застосування промокоду
-    // Function to apply the promo code
 function applyPromoCode() {
     var promoCodeValue = $('#promo-code').val().trim().toUpperCase();
+    var promoForm = $('form[name="wf-form-Promo_code"]'); // Визначаємо форму з промо-кодом
 
-    // Check if the promo code is empty
+    // Перевіряємо, чи не порожній промо-код
     if (promoCodeValue === '') {
         $('.cart_total-price').text(`${formatPrice(originalTotalPrice)} ₴`);
-        $('#promo-code').closest('form').find('.w-form-fail').hide(); // Hide the fail message within the promo code form
+        promoForm.find('.w-form-fail').hide(); // Ховаємо повідомлення про невдачу в межах форми промо-коду
         promoCodeApplied = false;
-        return; // Exit the function
+        return; // Вихід із функції
     }
 
-    // Check the promo code and apply discount
-    if (promoCodeValue === 'MEAT2024') { // Replace 'YOUR_PROMO_CODE' with your actual promo code
+    // Перевіряємо промо-код та застосовуємо знижку
+    if (promoCodeValue === 'MEAT2024') {
         var cartTotalPrice = parseFloat($('.cart_total-price').text().replace('₴', '')) || 0;
-        var discount = cartTotalPrice * 0.1; // 10% discount
+        var discount = cartTotalPrice * 0.1; // 10% знижка
 
-        // Apply discount to the total cart price
+        // Застосовуємо знижку до загальної вартості кошика
         var newTotalPrice = cartTotalPrice - discount;
         $('.cart_total-price').text(`${formatPrice(newTotalPrice)} ₴`);
-        $('#promo-code').closest('form').find('.w-form-fail').hide(); // Hide the fail message within the promo code form
+        promoForm.find('.w-form-fail').hide(); // Ховаємо повідомлення про невдачу в межах форми промо-коду
         promoCodeApplied = true;
     } else {
-        $('#promo-code').closest('form').find('.w-form-fail').show(); // Show the fail message within the promo code form
+        promoForm.find('.w-form-fail').show(); // Показуємо повідомлення про невдачу в межах форми промо-коду
         promoCodeApplied = false;
     }
 }
