@@ -280,7 +280,7 @@ function applyPromoCode() {
     }
 
     // Перевіряємо промо-код та застосовуємо знижку
-    if (promoCodeValue === 'meat2024') {
+    if (promoCodeValue === 'MEAT2024') {
         var cartTotalPrice = parseFloat($('.cart_total-price').text().replace('₴', '')) || 0;
         var discount = cartTotalPrice * 0.1; // 10% знижка
 
