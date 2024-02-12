@@ -230,31 +230,57 @@ function increaseQuantity(cartItem) {
 }
 
 $(document).ready(function () {
-    cartItemsContainer = $('#cart-items');
-    savedCartItems = JSON.parse(localStorage.getItem('cartItems')) || [];
+    var cartItemsContainer = $('#cart-items');
+    var savedCartItems = JSON.parse(localStorage.getItem('cartItems')) || [];
 
     restoreCart(savedCartItems);
 
+    // Функція для обробки введення промо-коду
+    $('#promo-code').on('input', function () {
+        applyPromoCode();
+    });
+
+    // Додати обробник кліку на кнопку "Додати в кошик"
     $('.add_card').on('click', function (e) {
         e.preventDefault();
         addToCart();
     });
 
+    // Додати обробник кліку на кнопку "Видалити з кошика"
     $(document).on('click', '.remove-from-cart', function () {
         removeFromCart(this);
     });
 
+    // Додати обробник кліку на кнопку "Мінус"
     $(document).on('click', '.minus_cart', function (e) {
         e.preventDefault();
         var cartItem = $(this).closest('.cart-item');
         decreaseQuantity(cartItem);
     });
 
+    // Додати обробник кліку на кнопку "Плюс"
     $(document).on('click', '.plus_cart', function (e) {
         e.preventDefault();
         var cartItem = $(this).closest('.cart-item');
         increaseQuantity(cartItem);
     });
+
+    // Функція для застосування промо-коду
+    function applyPromoCode() {
+        var promoCodeValue = $('#promo-code').val().trim().toUpperCase();
+
+        // Перевірка промо-коду та застосування знижки
+        if (promoCodeValue === 'YOUR_PROMO_CODE') { // Замініть 'YOUR_PROMO_CODE' на ваш реальний промо-код
+            var cartTotalPrice = parseFloat($('.cart_total-price').text().replace('₴', '')) || 0;
+            var discount = cartTotalPrice * 0.1; // Знижка 10%
+
+            // Застосування знижки до загальної суми кошика
+            var newTotalPrice = cartTotalPrice - discount;
+            $('.cart_total-price').text(`${formatPrice(newTotalPrice)} ₴`);
+        }
+    }
+
+    // Інші функції вашого коду...
 });
 
 
