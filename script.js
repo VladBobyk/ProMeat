@@ -71,8 +71,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 // Код для кошика
-var cartItemsContainer;
+ var cartItemsContainer;
     var savedCartItems;
+    var originalTotalPrice = 0;
 
     function updateCartNumber() {
         var itemCount = $('#cart-items').children('.cart-item').length;
@@ -117,6 +118,7 @@ var cartItemsContainer;
 
         if (total > 0) {
             $('.cart_total-price').text(`${formatPrice(total)} ₴`);
+            originalTotalPrice = total; // Save the original total price
         } else {
             $('.cart_total-price').text(`0 ₴`);
         }
@@ -264,6 +266,12 @@ var cartItemsContainer;
         // Function to apply the promo code
         function applyPromoCode() {
             var promoCodeValue = $('#promo-code').val().trim().toUpperCase();
+
+            // Check if the promo code is empty
+            if (promoCodeValue === '') {
+                $('.cart_total-price').text(`${formatPrice(originalTotalPrice)} ₴`);
+                return; // Exit the function
+            }
 
             // Check the promo code and apply discount
             if (promoCodeValue === 'YOUR_PROMO_CODE') { // Replace 'YOUR_PROMO_CODE' with your actual promo code
