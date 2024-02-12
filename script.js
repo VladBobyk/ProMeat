@@ -268,28 +268,29 @@ $(document).ready(function () {
     // Функція застосування промокоду
 function applyPromoCode() {
     var promoCodeValue = $('#promo-code').val().trim().toUpperCase();
-    var promoForm = $('form[name="wf-form-Promo_code"]'); // Визначаємо форму з промо-кодом
+    var promoForm = $('form[name="wf-form-Promo_code"]'); // Отримуємо форму з промо-кодом
+    var errorCode = promoForm.find('.error_code'); // Отримуємо елемент з класом .error_code
 
     // Перевіряємо, чи не порожній промо-код
     if (promoCodeValue === '') {
         $('.cart_total-price').text(`${formatPrice(originalTotalPrice)} ₴`);
-        promoForm.find('.error_code').hide(); // Ховаємо повідомлення про невдачу в межах форми промо-коду
+        errorCode.css('display', 'none'); // Приховуємо повідомлення про помилку
         promoCodeApplied = false;
         return; // Вихід із функції
     }
 
     // Перевіряємо промо-код та застосовуємо знижку
-    if (promoCodeValue === 'MEAT2024') {
+    if (promoCodeValue === 'meat2024') {
         var cartTotalPrice = parseFloat($('.cart_total-price').text().replace('₴', '')) || 0;
         var discount = cartTotalPrice * 0.1; // 10% знижка
 
         // Застосовуємо знижку до загальної вартості кошика
         var newTotalPrice = cartTotalPrice - discount;
         $('.cart_total-price').text(`${formatPrice(newTotalPrice)} ₴`);
-        promoForm.find('.error_code').hide(); // Ховаємо повідомлення про невдачу в межах форми промо-коду
+        errorCode.css('display', 'none'); // Приховуємо повідомлення про помилку
         promoCodeApplied = true;
     } else {
-        promoForm.find('.error_code').show(); // Показуємо повідомлення про невдачу в межах форми промо-коду
+        errorCode.css('display', 'block'); // Показуємо повідомлення про помилку
         promoCodeApplied = false;
     }
 }
