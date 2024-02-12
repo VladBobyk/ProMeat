@@ -175,11 +175,11 @@ function addToCart() {
     updateCartNumber();
 
     // Change button text to "Added to Cart"
-    $('.add_card').text('Added to Cart');
+    $('.add_card').text('Додано в кошик');
 
     // Revert button text after 5 seconds
     setTimeout(function() {
-        $('.add_card').text('Add to Cart');
+        $('.add_card').text('Додати в кошик');
     }, 5000);
 }
 
