@@ -273,7 +273,7 @@ function applyPromoCode() {
     // Перевіряємо, чи не порожній промо-код
     if (promoCodeValue === '') {
         $('.cart_total-price').text(`${formatPrice(originalTotalPrice)} ₴`);
-        promoForm.find('.w-form-fail').hide(); // Ховаємо повідомлення про невдачу в межах форми промо-коду
+        promoForm.find('.error_code').hide(); // Ховаємо повідомлення про невдачу в межах форми промо-коду
         promoCodeApplied = false;
         return; // Вихід із функції
     }
@@ -286,10 +286,10 @@ function applyPromoCode() {
         // Застосовуємо знижку до загальної вартості кошика
         var newTotalPrice = cartTotalPrice - discount;
         $('.cart_total-price').text(`${formatPrice(newTotalPrice)} ₴`);
-        promoForm.find('.w-form-fail').hide(); // Ховаємо повідомлення про невдачу в межах форми промо-коду
+        promoForm.find('.error_code').hide(); // Ховаємо повідомлення про невдачу в межах форми промо-коду
         promoCodeApplied = true;
     } else {
-        promoForm.find('.w-form-fail').show(); // Показуємо повідомлення про невдачу в межах форми промо-коду
+        promoForm.find('.error_code').show(); // Показуємо повідомлення про невдачу в межах форми промо-коду
         promoCodeApplied = false;
     }
 }
