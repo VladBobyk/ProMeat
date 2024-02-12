@@ -266,32 +266,33 @@ $(document).ready(function () {
     });
 
     // Функція застосування промокоду
-    function applyPromoCode() {
-        var promoCodeValue = $('#promo-code').val().trim().toUpperCase();
+    // Function to apply the promo code
+function applyPromoCode() {
+    var promoCodeValue = $('#promo-code').val().trim().toUpperCase();
 
-        // Перевірка на пустий промокод
-        if (promoCodeValue === '') {
-            $('.cart_total-price').text(`${formatPrice(originalTotalPrice)} ₴`);
-            $('.w-form-fail').hide(); // Приховати повідомлення про помилку
-            promoCodeApplied = false;
-            return; // Вихід з функції
-        }
-
-        // Перевірка промокоду та застосування знижки
-        if (promoCodeValue === 'MEAT2024') {
-            var cartTotalPrice = parseFloat($('.cart_total-price').text().replace('₴', '')) || 0;
-            var discount = cartTotalPrice * 0.1; // Знижка 10%
-
-            // Застосування знижки до загальної вартості кошика
-            var newTotalPrice = cartTotalPrice - discount;
-            $('.cart_total-price').text(`${formatPrice(newTotalPrice)} ₴`);
-            $('.w-form-fail').hide(); // Приховати повідомлення про помилку
-            promoCodeApplied = true;
-        } else {
-            $('.w-form-fail').show(); // Показати повідомлення про помилку
-            promoCodeApplied = false;
-        }
+    // Check if the promo code is empty
+    if (promoCodeValue === '') {
+        $('.cart_total-price').text(`${formatPrice(originalTotalPrice)} ₴`);
+        $('#promo-code').closest('form').find('.w-form-fail').hide(); // Hide the fail message within the promo code form
+        promoCodeApplied = false;
+        return; // Exit the function
     }
+
+    // Check the promo code and apply discount
+    if (promoCodeValue === 'meat2024') { // Replace 'YOUR_PROMO_CODE' with your actual promo code
+        var cartTotalPrice = parseFloat($('.cart_total-price').text().replace('₴', '')) || 0;
+        var discount = cartTotalPrice * 0.1; // 10% discount
+
+        // Apply discount to the total cart price
+        var newTotalPrice = cartTotalPrice - discount;
+        $('.cart_total-price').text(`${formatPrice(newTotalPrice)} ₴`);
+        $('#promo-code').closest('form').find('.w-form-fail').hide(); // Hide the fail message within the promo code form
+        promoCodeApplied = true;
+    } else {
+        $('#promo-code').closest('form').find('.w-form-fail').show(); // Show the fail message within the promo code form
+        promoCodeApplied = false;
+    }
+}
 
     // Запобігання вставленню тексту кілька разів в поле введення промокоду
     $('#promo-code').on('paste', function (e) {
