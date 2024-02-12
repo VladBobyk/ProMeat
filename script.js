@@ -71,9 +71,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 // Код для кошика
- var cartItemsContainer;
+     var cartItemsContainer;
     var savedCartItems;
     var originalTotalPrice = 0;
+    var promoCodeApplied = false;
 
     function updateCartNumber() {
         var itemCount = $('#cart-items').children('.cart-item').length;
@@ -270,6 +271,8 @@ document.addEventListener('DOMContentLoaded', function () {
             // Check if the promo code is empty
             if (promoCodeValue === '') {
                 $('.cart_total-price').text(`${formatPrice(originalTotalPrice)} ₴`);
+                $('.w-form-fail').hide(); // Hide the fail message
+                promoCodeApplied = false;
                 return; // Exit the function
             }
 
@@ -281,10 +284,21 @@ document.addEventListener('DOMContentLoaded', function () {
                 // Apply discount to the total cart price
                 var newTotalPrice = cartTotalPrice - discount;
                 $('.cart_total-price').text(`${formatPrice(newTotalPrice)} ₴`);
+                $('.w-form-fail').hide(); // Hide the fail message
+                promoCodeApplied = true;
+            } else {
+                $('.w-form-fail').show(); // Show the fail message
+                promoCodeApplied = false;
             }
         }
-    });
 
+        // Prevent pasting text multiple times in the promo code input
+        $('#promo-code').on('paste', function (e) {
+            if (promoCodeApplied) {
+                e.preventDefault();
+            }
+        });
+    });
 
 
 
