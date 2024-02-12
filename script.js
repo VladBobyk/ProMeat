@@ -162,7 +162,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 </div>
                 <div class="cart-items_right">
                     <p class="cart_price">${formatPrice(burgerPricePerUnit * burgerQuantity)} ₴</p>
-                    <button class="remove-from-cart">Remove</button>
+                    <button class="remove-from-cart">Видалити</button>
                     <div class="burger-details"></div>
                 </div>
             </div>
