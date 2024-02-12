@@ -266,10 +266,11 @@ $(document).ready(function () {
     });
 
     // Функція застосування промокоду
+// Function to apply the promo code
 function applyPromoCode() {
     var promoCodeValue = $('#promo-code').val().trim().toUpperCase();
     var promoForm = $('form[name="wf-form-Promo_code"]'); // Отримуємо форму з промо-кодом
-    var errorCode = promoForm.find('.error_code'); // Отримуємо елемент з класом .error_code
+    var errorCode = promoForm.find('#error_code'); // Отримуємо елемент з ідентифікатором #error_code
 
     // Перевіряємо, чи не порожній промо-код
     if (promoCodeValue === '') {
@@ -294,6 +295,7 @@ function applyPromoCode() {
         promoCodeApplied = false;
     }
 }
+
 
     // Запобігання вставленню тексту кілька разів в поле введення промокоду
     $('#promo-code').on('paste', function (e) {
