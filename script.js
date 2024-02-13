@@ -71,7 +71,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 // Код для кошика
-// Код для кошика
      var cartItemsContainer;
     var savedCartItems;
     var originalTotalPrice = 0;
@@ -176,11 +175,11 @@ document.addEventListener('DOMContentLoaded', function () {
         updateCartNumber();
 
         // Change button text to "Added to Cart"
-        $('.add_card').text('Додано в кошик');
+        $('.add_card').text('Added to Cart');
 
         // Revert button text after 5 seconds
         setTimeout(function() {
-            $('.add_card').text('Додати в кошик');
+            $('.add_card').text('Add to Cart');
         }, 5000);
     }
 
@@ -278,7 +277,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             // Check the promo code and apply discount
-            if (promoCodeValue === 'MEAT2024') { // Replace 'YOUR_PROMO_CODE' with your actual promo code
+            if (promoCodeValue === 'meat2024') { // Replace 'YOUR_PROMO_CODE' with your actual promo code
                 var cartTotalPrice = parseFloat($('.cart_total-price').text().replace('₴', '')) || 0;
                 var discount = cartTotalPrice * 0.1; // 10% discount
 
