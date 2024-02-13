@@ -293,15 +293,20 @@ function applyPromoCode() {
     }
 }
 
-
-    // Запобігання вставленню тексту кілька разів в поле введення промокоду
-    $('#promo-code').on('paste', function (e) {
-        if (promoCodeApplied) {
-            e.preventDefault();
-        }
-    });
+// Запобігання вставленню тексту кілька разів в поле введення промокоду
+$('#promo-code').on('paste', function (e) {
+    if (promoCodeApplied) {
+        e.preventDefault();
+    }
 });
 
+// Перехоплюємо подію натискання на клавішу Enter в полі промо-коду та блокуємо дію
+$('#promo-code').on('keydown', function (e) {
+    if (e.keyCode === 13) {
+        e.preventDefault();
+        return false;
+    }
+});
 
 
 
