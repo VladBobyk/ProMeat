@@ -71,6 +71,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 // Код для кошика
+ // Код для кошика
 var cartItemsContainer;
 var savedCartItems;
 var originalTotalPrice = 0;
@@ -292,21 +293,14 @@ function applyPromoCode() {
     }
 }
 
-// Запобігання вставленню тексту кілька разів в поле введення промокоду
-$('#promo-code').on('paste', function (e) {
-    if (promoCodeApplied) {
-        e.preventDefault();
-    }
-});
 
-// Перехоплюємо подію натискання на клавішу Enter в полі промо-коду та блокуємо дію
-$('#promo-code').on('keydown', function (e) {
-    if (e.keyCode === 13) {
-        e.preventDefault();
-        return false;
-    }
+    // Запобігання вставленню тексту кілька разів в поле введення промокоду
+    $('#promo-code').on('paste', function (e) {
+        if (promoCodeApplied) {
+            e.preventDefault();
+        }
+    });
 });
-
 
 
 
