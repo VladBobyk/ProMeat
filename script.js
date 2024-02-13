@@ -264,7 +264,7 @@ $(document).ready(function () {
         applyPromoCode();
     });
 
-    // Функція застосування промокоду
+// Функція застосування промо-коду
 function applyPromoCode() {
     var promoCodeValue = $('#promo-code').val().trim().toUpperCase();
     var promoForm = $('form[name="wf-form-Promo_code"]'); // Отримуємо форму з промо-кодом
@@ -274,11 +274,10 @@ function applyPromoCode() {
     if (promoCodeValue === '') {
         $('.cart_total-price').text(`${formatPrice(originalTotalPrice)} ₴`);
         errorCode.css('display', 'none'); // Приховуємо повідомлення про помилку
-        promoCodeApplied = false;
         return; // Вихід із функції
     }
 
-    // Перевіряємо промо-код та застосовуємо знижку
+    // Перевіряємо промо-код та застосовуємо знижку, якщо промо-код ще не було застосовано
     if (promoCodeValue === 'MEAT2024' && !promoCodeApplied) {
         var cartTotalPrice = parseFloat($('.cart_total-price').text().replace('₴', '')) || 0;
         var discount = cartTotalPrice * 0.1; // 10% знижка
@@ -290,9 +289,9 @@ function applyPromoCode() {
         promoCodeApplied = true;
     } else {
         errorCode.css('display', 'block'); // Показуємо повідомлення про помилку
-        promoCodeApplied = false;
     }
 }
+
 
     // Запобігання вставленню тексту кілька разів в поле введення промокоду
     $('#promo-code').on('paste', function (e) {
