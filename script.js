@@ -313,6 +313,7 @@ $('#promo-code').on('keydown', function (e) {
 
 
 
+
 // Код для адреси
     document.addEventListener('DOMContentLoaded', function () {
         var deliveryForm = document.getElementById('wf-form-delivery');
