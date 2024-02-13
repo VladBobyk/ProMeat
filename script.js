@@ -332,7 +332,7 @@ $('#promo-code').on('keydown', function (e) {
 
 
 
-
+/*
 
 // Дні тисжня
 document.addEventListener('DOMContentLoaded', function() {
@@ -384,3 +384,4 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+*/
