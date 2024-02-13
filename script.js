@@ -363,7 +363,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function showInformationBlock(nextSaturday) {
         var nextDayOfWeek = 'Субота'; // Українською: 'Субота'
-        var informationText = 'Замовлення їжі зараз закрито, будь ласка, повертайтесь до нас: <br><strong class="bold-text">Завтра з 10:00 до 19:00</strong>';
+        var informationText = 'Замовлення їжі зараз закрито, будь ласка, повертайтесь до нас: <br><strong class="bold-text">Завтра з 10:00 до 20:00</strong>';
         var newInformationBlock = document.createElement('div');
         newInformationBlock.classList.add('information-block');
         newInformationBlock.innerHTML = '<p class="description_black information-block_text">' + informationText + '</p>';
