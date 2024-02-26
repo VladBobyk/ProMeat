@@ -105,6 +105,7 @@ function saveCart() {
     localStorage.setItem('cartItems', JSON.stringify(cartItems));
     updateCartTotal();
     updateCartNumber();
+    updatePackagingPrice(); // Додали оновлення вартості упакування
 }
 
 function updateCartTotal() {
@@ -136,6 +137,7 @@ function restoreCart(savedCartItems) {
     cartItemsContainer.html(savedCartItems.map(item => item.html).join(''));
     updateCartTotal();
     updateCartNumber();
+    updatePackagingPrice(); // Додали оновлення вартості упакування
 }
 
 function addToCart() {
@@ -153,7 +155,7 @@ function addToCart() {
             <div class="cart-items_left">
                 <img class="burger-image" src="${burgerImage}" alt="${burgerName}">
                 <div class="cart_info">
-                    <h4 class="cart_product_title" packaging="${packaging}">${burgerName}</h4> <!-- Додаємо атрибут packaging -->
+                    <h4 class="cart_product_title" packaging="${packaging}">${burgerName}</h4>
                     <p class="ingredients-list cart_ingredients">${burgerIngredients}</p>
                     <div class="product_quantity product_quantity_cart">
                         <a href="#" class="minus minus_cart w-inline-block" id="minus_cart">-</a>
@@ -176,10 +178,8 @@ function addToCart() {
     saveCart();
     updateCartNumber();
 
-    // Змінити текст кнопки на "Added to Cart"
     $('.add_card').text('Додано в кошик');
 
-    // Повернути текст кнопки через 5 секунд
     setTimeout(function() {
         $('.add_card').text('Додати в кошик');
     }, 5000);
@@ -209,48 +209,8 @@ function removeFromCart(button) {
     saveCart();
     updateCartTotal();
     updateCartNumber();
+    updatePackagingPrice(); // Додали оновлення вартості упакування
 }
-
-//////////////////////////////////////////////
-function decreaseQuantity(cartItem) {
-    var quantityInput = cartItem.find('.quantity_cart');
-    var currentQuantity = parseInt(quantityInput.val(), 10);
-    var newQuantity = Math.max(currentQuantity - 1, 1);
-
-    quantityInput.val(newQuantity);
-
-    // Отримуємо значення атрибуту packaging та зменшуємо його на 1
-    var packaging = parseInt(cartItem.data('packaging'));
-    if (!isNaN(packaging) && packaging > 0) {
-        cartItem.data('packaging', packaging - 1);
-    }
-
-    // Зберігаємо зміни та оновлюємо загальну вартість кошика
-    saveCart();
-    updateCartTotal();
-    updateCartNumber();
-}
-
-function increaseQuantity(cartItem) {
-    var quantityInput = cartItem.find('.quantity_cart');
-    var currentQuantity = parseInt(quantityInput.val(), 10);
-    var newQuantity = currentQuantity + 1;
-
-    quantityInput.val(newQuantity);
-
-    // Отримуємо значення атрибуту packaging та додаємо до нього 1
-    var packaging = parseInt(cartItem.data('packaging'));
-    if (!isNaN(packaging)) {
-        cartItem.data('packaging', packaging + 1);
-    }
-
-    // Зберігаємо зміни та оновлюємо загальну вартість кошика
-    saveCart();
-    updateCartTotal();
-    updateCartNumber();
-}
-
-
 
 function decreaseQuantity(cartItem) {
     var quantityInput = cartItem.find('.quantity_cart');
@@ -262,6 +222,7 @@ function decreaseQuantity(cartItem) {
     saveCart();
     updateCartTotal();
     updateCartNumber();
+    updatePackagingPrice(); // Додали оновлення вартості упакування
 }
 
 function increaseQuantity(cartItem) {
@@ -274,6 +235,23 @@ function increaseQuantity(cartItem) {
     saveCart();
     updateCartTotal();
     updateCartNumber();
+    updatePackagingPrice(); // Додали оновлення вартості упакування
+}
+
+// Оновлення вартості упакування
+function calculatePackagingPrice() {
+    var totalPackagingPrice = 0;
+    $('.cart-item').each(function () {
+        var quantity = parseInt($(this).find('.quantity_cart').val(), 10) || 1;
+        var packagingPrice = parseInt($(this).data('packaging')) || 0;
+        totalPackagingPrice += (packagingPrice * quantity);
+    });
+    return totalPackagingPrice;
+}
+
+function updatePackagingPrice() {
+    var packagingPrice = calculatePackagingPrice();
+    $('.packaging_price').text(formatPrice(packagingPrice) + ' ₴');
 }
 
 $(document).ready(function () {
@@ -303,82 +281,23 @@ $(document).ready(function () {
         increaseQuantity(cartItem);
     });
 
-    // Обробник події для кнопки застосування промокоду
     $('#button-promo').on('click', function() {
         applyPromoCode();
     });
 
-// Глобальна змінна для визначення застосування промо-коду
-var promoCodeApplied = false;
-
-// Функція застосування промо-коду
-function applyPromoCode() {
-    var promoCodeValue = $('#promo-code').val().trim().toUpperCase();
-    var promoForm = $('form[name="wf-form-Promo_code"]'); // Отримуємо форму з промо-кодом
-    var errorCode = promoForm.find('#error_code'); // Отримуємо елемент з ідентифікатором #error_code
-
-    // Перевіряємо, чи не порожній промо-код
-    if (promoCodeValue === '') {
-        $('.cart_total-price').text(`${formatPrice(originalTotalPrice)} ₴`);
-        errorCode.css('display', 'none'); // Приховуємо повідомлення про помилку
-        return; // Вихід із функції
-    }
-
-    // Перевіряємо промо-код та застосовуємо знижку, якщо промо-код ще не було застосовано
-    if (promoCodeValue === 'MEAT2024' && !promoCodeApplied) {
-        var cartTotalPrice = parseFloat($('.cart_total-price').text().replace('₴', '')) || 0;
-        var discount = cartTotalPrice * 0.1; // 10% знижка
-
-        // Застосовуємо знижку до загальної вартості кошика
-        var newTotalPrice = cartTotalPrice - discount;
-        $('.cart_total-price').text(`${formatPrice(newTotalPrice)} ₴`);
-        errorCode.css('display', 'none'); // Приховуємо повідомлення про помилку
-        promoCodeApplied = true;
-    } else {
-        errorCode.css('display', 'block'); // Показуємо повідомлення про помилку
-    }
-}
-
-// Запобігання вставленню тексту кілька разів в поле введення промокоду
-$('#promo-code').on('paste', function (e) {
-    if (promoCodeApplied) {
-        e.preventDefault();
-    }
-});
-
-// Перехоплюємо подію натискання на клавішу Enter в полі промо-коду та блокуємо дію
-$('#promo-code').on('keydown', function (e) {
-    if (e.keyCode === 13) {
-        e.preventDefault();
-        return false;
-    }
-});
-
-// Ваша функція $(document).ready() повинна бути включена тут
-$(document).ready(function () {
-    // Ваші інші обробники подій та функції також мають бути тут
-
-    // Обробник події для кнопки застосування промокоду
-    $('#button-promo').on('click', function() {
-        applyPromoCode();
-    });
-
-    // Запобігання вставленню тексту кілька разів в поле введення промокоду
+    // Обробники подій для поля вводу промо-коду
     $('#promo-code').on('paste', function (e) {
         if (promoCodeApplied) {
             e.preventDefault();
         }
     });
 
-    // Перехоплюємо подію натискання на клавішу Enter в полі промо-коду та блокуємо дію
     $('#promo-code').on('keydown', function (e) {
         if (e.keyCode === 13) {
             e.preventDefault();
             return false;
         }
     });
-});
-
 });
 
 
