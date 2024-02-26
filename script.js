@@ -298,6 +298,77 @@ $(document).ready(function () {
             return false;
         }
     });
+
+// Глобальна змінна для визначення застосування промо-коду
+var promoCodeApplied = false;
+
+// Функція застосування промо-коду
+function applyPromoCode() {
+    var promoCodeValue = $('#promo-code').val().trim().toUpperCase();
+    var promoForm = $('form[name="wf-form-Promo_code"]'); // Отримуємо форму з промо-кодом
+    var errorCode = promoForm.find('#error_code'); // Отримуємо елемент з ідентифікатором #error_code
+
+    // Перевіряємо, чи не порожній промо-код
+    if (promoCodeValue === '') {
+        $('.cart_total-price').text(`${formatPrice(originalTotalPrice)} ₴`);
+        errorCode.css('display', 'none'); // Приховуємо повідомлення про помилку
+        return; // Вихід із функції
+    }
+
+    // Перевіряємо промо-код та застосовуємо знижку, якщо промо-код ще не було застосовано
+    if (promoCodeValue === 'MEAT2024' && !promoCodeApplied) {
+        var cartTotalPrice = parseFloat($('.cart_total-price').text().replace('₴', '')) || 0;
+        var discount = cartTotalPrice * 0.1; // 10% знижка
+
+        // Застосовуємо знижку до загальної вартості кошика
+        var newTotalPrice = cartTotalPrice - discount;
+        $('.cart_total-price').text(`${formatPrice(newTotalPrice)} ₴`);
+        errorCode.css('display', 'none'); // Приховуємо повідомлення про помилку
+        promoCodeApplied = true;
+    } else {
+        errorCode.css('display', 'block'); // Показуємо повідомлення про помилку
+    }
+}
+
+// Запобігання вставленню тексту кілька разів в поле введення промокоду
+$('#promo-code').on('paste', function (e) {
+    if (promoCodeApplied) {
+        e.preventDefault();
+    }
+});
+
+// Перехоплюємо подію натискання на клавішу Enter в полі промо-коду та блокуємо дію
+$('#promo-code').on('keydown', function (e) {
+    if (e.keyCode === 13) {
+        e.preventDefault();
+        return false;
+    }
+});
+
+// Ваша функція $(document).ready() повинна бути включена тут
+$(document).ready(function () {
+    // Ваші інші обробники подій та функції також мають бути тут
+
+    // Обробник події для кнопки застосування промокоду
+    $('#button-promo').on('click', function() {
+        applyPromoCode();
+    });
+
+    // Запобігання вставленню тексту кілька разів в поле введення промокоду
+    $('#promo-code').on('paste', function (e) {
+        if (promoCodeApplied) {
+            e.preventDefault();
+        }
+    });
+
+    // Перехоплюємо подію натискання на клавішу Enter в полі промо-коду та блокуємо дію
+    $('#promo-code').on('keydown', function (e) {
+        if (e.keyCode === 13) {
+            e.preventDefault();
+            return false;
+        }
+    });
+});
 });
 
 
