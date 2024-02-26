@@ -396,7 +396,7 @@ $(document).ready(function () {
 
 
 
-/*
+
 
 // Дні тисжня
 document.addEventListener('DOMContentLoaded', function() {
@@ -447,4 +447,3 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 });
-*/
