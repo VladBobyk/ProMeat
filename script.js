@@ -211,6 +211,47 @@ function removeFromCart(button) {
     updateCartNumber();
 }
 
+//////////////////////////////////////////////
+function decreaseQuantity(cartItem) {
+    var quantityInput = cartItem.find('.quantity_cart');
+    var currentQuantity = parseInt(quantityInput.val(), 10);
+    var newQuantity = Math.max(currentQuantity - 1, 1);
+
+    quantityInput.val(newQuantity);
+
+    // Отримуємо значення атрибуту packaging та зменшуємо його на 1
+    var packaging = parseInt(cartItem.data('packaging'));
+    if (!isNaN(packaging) && packaging > 0) {
+        cartItem.data('packaging', packaging - 1);
+    }
+
+    // Зберігаємо зміни та оновлюємо загальну вартість кошика
+    saveCart();
+    updateCartTotal();
+    updateCartNumber();
+}
+
+function increaseQuantity(cartItem) {
+    var quantityInput = cartItem.find('.quantity_cart');
+    var currentQuantity = parseInt(quantityInput.val(), 10);
+    var newQuantity = currentQuantity + 1;
+
+    quantityInput.val(newQuantity);
+
+    // Отримуємо значення атрибуту packaging та додаємо до нього 1
+    var packaging = parseInt(cartItem.data('packaging'));
+    if (!isNaN(packaging)) {
+        cartItem.data('packaging', packaging + 1);
+    }
+
+    // Зберігаємо зміни та оновлюємо загальну вартість кошика
+    saveCart();
+    updateCartTotal();
+    updateCartNumber();
+}
+
+
+
 function decreaseQuantity(cartItem) {
     var quantityInput = cartItem.find('.quantity_cart');
     var currentQuantity = parseInt(quantityInput.val(), 10);
