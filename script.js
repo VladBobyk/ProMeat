@@ -185,6 +185,7 @@ function addToCart() {
     }, 5000);
 }
 
+
 function getSelectedIngredients() {
     var selectedIngredients = [];
 
@@ -260,8 +261,6 @@ $(document).ready(function () {
         var cartItem = $(this).closest('.cart-item');
         increaseQuantity(cartItem);
     });
-});
-
 
     // Обробник події для кнопки застосування промокоду
     $('#button-promo').on('click', function() {
