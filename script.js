@@ -71,7 +71,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 // Код для кошика
- // Код для кошика
+// Код для кошика
 var cartItemsContainer;
 var savedCartItems;
 var originalTotalPrice = 0;
@@ -144,15 +144,16 @@ function addToCart() {
     var burgerIngredients = getSelectedIngredients().replace(/, /g, '<br>');
     var burgerQuantity = $('#quantity_card').val();
     var burgerPricePerUnit = parseFloat($('.price').attr('price')) || 0;
+    var packaging = $('.product_title').attr('packaging'); // Отримуємо значення атрибуту packaging
 
     var itemId = 'item_' + Date.now();
 
     var cartItem = `
-        <div class="cart-item" data-item-id="${itemId}" data-initial-price="${burgerPricePerUnit}">
+        <div class="cart-item" data-item-id="${itemId}" data-initial-price="${burgerPricePerUnit}" data-packaging="${packaging}">
             <div class="cart-items_left">
                 <img class="burger-image" src="${burgerImage}" alt="${burgerName}">
                 <div class="cart_info">
-                    <h4 class="cart_product_title">${burgerName}</h4>
+                    <h4 class="cart_product_title" packaging="${packaging}">${burgerName}</h4> <!-- Додаємо атрибут packaging -->
                     <p class="ingredients-list cart_ingredients">${burgerIngredients}</p>
                     <div class="product_quantity product_quantity_cart">
                         <a href="#" class="minus minus_cart w-inline-block" id="minus_cart">-</a>
@@ -259,6 +260,8 @@ $(document).ready(function () {
         var cartItem = $(this).closest('.cart-item');
         increaseQuantity(cartItem);
     });
+});
+
 
     // Обробник події для кнопки застосування промокоду
     $('#button-promo').on('click', function() {
@@ -363,7 +366,7 @@ $(document).ready(function () {
 
 
 
-
+/*
 
 // Дні тисжня
 document.addEventListener('DOMContentLoaded', function() {
@@ -414,3 +417,4 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 });
+*/
