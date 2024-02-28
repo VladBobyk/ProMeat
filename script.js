@@ -108,6 +108,7 @@ function saveCart() {
 
 function updateCartTotal() {
     var total = 0;
+    var packagingTotal = 0; // Змінна для вартості упаковки
 
     $('.cart-item .cart_price').each(function () {
         var priceText = $(this).text().replace('₴', '');
@@ -117,9 +118,15 @@ function updateCartTotal() {
         }
     });
 
+    // Розраховуємо вартість упаковки для кожного товару
+    $('.cart-item').each(function () {
+        var quantity = parseInt($(this).find('.quantity_cart').val(), 10) || 1;
+        var packagingPrice = parseInt($(this).data('packaging')) || 0;
+        packagingTotal += packagingPrice * quantity;
+    });
+
     // Додаємо вартість упаковки до загальної вартості
-    var packagingPrice = calculatePackagingPrice();
-    total += packagingPrice;
+    total += packagingTotal;
 
     if (total > 0) {
         $('.cart_total-price').text(`${formatPrice(total)} ₴`);
@@ -127,8 +134,10 @@ function updateCartTotal() {
     } else {
         $('.cart_total-price').text(`0 ₴`);
     }
-}
 
+    // Виводимо вартість упаковки в відповідний елемент
+    $('.packaging_price').text(`${formatPrice(packagingTotal)} ₴`);
+}
 function formatPrice(price) {
     // Відображення значення після крапки, якщо воно більше 0
     var formattedPrice = price.toFixed(2);
