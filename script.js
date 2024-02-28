@@ -327,7 +327,7 @@ $(document).ready(function () {
 
 
 
-/*
+
 // Дні тисжня
 document.addEventListener('DOMContentLoaded', function() {
     var currentDate = new Date();
@@ -377,5 +377,5 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 });
-*/
+
 
