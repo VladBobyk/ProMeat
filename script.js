@@ -340,7 +340,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var productContent = document.querySelectorAll('.product_content');
 
     if (toppingsBlock && productContent) {
-        if (currentHour >= 10 && currentHour < 19) {
+        if (currentHour >= 10 && currentHour < 20) {
             // Показуємо блок з топінгами
             toppingsBlock.style.display = 'block';
             // Ховаємо інформаційний блок
