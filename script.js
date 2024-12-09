@@ -327,51 +327,82 @@ $(document).ready(function () {
 
 
 // Дні тисжня
-document.addEventListener('DOMContentLoaded', function() {
-    var currentDate = new Date();
-    var currentDay = currentDate.getDay(); // Отримуємо поточний день тижня (0 - неділя, 1 - понеділок, ..., 6 - субота)
-    var nextSaturday = new Date(currentDate); // Копіюємо поточну дату
+document.addEventListener('DOMContentLoaded', function () {
+    const currentDate = new Date();
+    const currentDay = currentDate.getDay(); // Поточний день тижня (0 - неділя, ..., 6 - субота)
+    const currentHour = currentDate.getHours();
+    const currentMinutes = currentDate.getMinutes();
 
-    // Знаходимо наступну суботу
-    nextSaturday.setDate(currentDate.getDate() + (6 - currentDay + 7) % 7);
+    const toppingsBlock = document.querySelector('.toppings_block');
+    const productContent = document.querySelectorAll('.product_content');
 
-    var currentHour = currentDate.getHours();
-    var toppingsBlock = document.querySelector('.toppings_block');
-    var productContent = document.querySelectorAll('.product_content');
+    // Робочий графік: старт і кінець часу (вказано у форматі [години, хвилини])
+    const workingHoursStart = [10, 0]; // Початок: 10:00
+    const workingHoursEnd = [15, 30]; // Кінець: 15:30
+
+    let nextAvailableDay = new Date(currentDate); // Початково припускаємо, що доступний день — сьогодні
+
+    // Логіка визначення наступного доступного дня
+    if (currentDay === 6 && (currentHour > workingHoursEnd[0] || (currentHour === workingHoursEnd[0] && currentMinutes >= workingHoursEnd[1]))) {
+        // Якщо сьогодні субота і час після 15:30, наступний доступний день — понеділок
+        nextAvailableDay.setDate(currentDate.getDate() + 2);
+    } else if (currentHour > workingHoursEnd[0] || (currentHour === workingHoursEnd[0] && currentMinutes >= workingHoursEnd[1])) {
+        // Якщо зараз після 15:30, замовлення доступне завтра
+        nextAvailableDay.setDate(currentDate.getDate() + 1);
+    }
 
     if (toppingsBlock && productContent) {
-        if (currentHour >= 10 && currentHour < 20) {
+        // Перевірка, чи зараз у робочий час
+        if (
+            (currentHour > workingHoursStart[0] || (currentHour === workingHoursStart[0] && currentMinutes >= workingHoursStart[1])) &&
+            (currentHour < workingHoursEnd[0] || (currentHour === workingHoursEnd[0] && currentMinutes < workingHoursEnd[1]))
+        ) {
             // Показуємо блок з топінгами
             toppingsBlock.style.display = 'block';
-            // Ховаємо інформаційний блок
             hideInformationBlock();
         } else {
             // Ховаємо блок з топінгами
             toppingsBlock.style.display = 'none';
-            // Показуємо інформаційний блок
-            showInformationBlock(nextSaturday);
+
+            // Визначення, чи замовлення можливе сьогодні
+            const isToday =
+                nextAvailableDay.toDateString() === currentDate.toDateString() &&
+                (currentHour < workingHoursStart[0] || (currentHour === workingHoursStart[0] && currentMinutes < workingHoursStart[1]));
+
+            showInformationBlock(isToday ? 'today' : 'next', nextAvailableDay);
         }
     }
 
     function hideInformationBlock() {
-        var informationBlock = document.querySelector('.information-block');
+        const informationBlock = document.querySelector('.information-block');
         if (informationBlock) {
             informationBlock.style.display = 'none';
         }
     }
 
-    function showInformationBlock(nextSaturday) {
-        var nextDayOfWeek = 'Субота'; // Українською: 'Субота'
-        var informationText = 'Замовлення їжі зараз закрито, будь ласка, повертайтесь до нас: <br><strong class="bold-text">Завтра з 10:00 до 20:00</strong>';
-        var newInformationBlock = document.createElement('div');
+    function showInformationBlock(type, nextAvailableDay) {
+        const daysOfWeekUA = ['Неділя', 'Понеділок', 'Вівторок', 'Середа', 'Четвер', 'П’ятниця', 'Субота'];
+        const nextDayOfWeek = daysOfWeekUA[nextAvailableDay.getDay()];
+        const startTime = `${workingHoursStart[0].toString().padStart(2, '0')}:${workingHoursStart[1].toString().padStart(2, '0')}`;
+        const endTime = `${workingHoursEnd[0].toString().padStart(2, '0')}:${workingHoursEnd[1].toString().padStart(2, '0')}`;
+        let informationText;
+
+        if (type === 'today') {
+            informationText = `Замовлення їжі зараз закрито, будь ласка, повертайтесь до нас: <br><strong class="bold-text">Сьогодні з ${startTime} до ${endTime}</strong>`;
+        } else {
+            informationText = `Замовлення їжі зараз закрито, будь ласка, повертайтесь до нас: <br><strong class="bold-text">${nextDayOfWeek} з ${startTime} до ${endTime}</strong>`;
+        }
+
+        const newInformationBlock = document.createElement('div');
         newInformationBlock.classList.add('information-block');
         newInformationBlock.innerHTML = '<p class="description_black information-block_text">' + informationText + '</p>';
 
         // Вставляємо інформаційний блок в кінець кожного елемента з класом .product_content
         if (productContent && productContent.length > 0) {
-            productContent.forEach(function(element) {
+            productContent.forEach(function (element) {
                 element.appendChild(newInformationBlock.cloneNode(true));
             });
         }
     }
 });
+
