@@ -337,7 +337,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const productContent = document.querySelectorAll('.product_content');
 
     // Робочий графік: старт і кінець часу (вказано у форматі [години, хвилини])
-    const workingHoursStart = [10, 0]; // Стандартний початок: 10:00
+    const workingHoursStart = [12, 0]; // Стандартний початок: 10:00
     const workingHoursEnd = [16, 0]; // Стандартний кінець: 20:00
 
     // Спеціальна дата відкриття: 2 січня о 12:00
