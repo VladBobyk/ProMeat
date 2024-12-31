@@ -337,36 +337,23 @@ document.addEventListener('DOMContentLoaded', function () {
     const productContent = document.querySelectorAll('.product_content');
 
     // Робочий графік: старт і кінець часу (вказано у форматі [години, хвилини])
-    const workingHoursStart = [12, 0]; // Стандартний початок: 10:00
-    const workingHoursEnd = [16, 0]; // Стандартний кінець: 20:00
+    const workingHoursStart = [12, 0]; // Початок: 10:00
+    const workingHoursEnd = [20, 0]; // Кінець: 20:00
 
-    // Спеціальна дата відкриття: 2 січня о 12:00
-    const specialOpeningDate = new Date(currentDate.getFullYear(), 0, 2, 12, 0); // 2 січня об 12:00
-
-    // Логіка визначення наступного доступного дня
     let nextAvailableDay = new Date(currentDate); // Початково припускаємо, що доступний день — сьогодні
 
-    // Якщо поточна дата менша за 2 січня 12:00, замовлення відкриється тоді
-    if (currentDate < specialOpeningDate) {
-        nextAvailableDay = specialOpeningDate;
-    } else if (
-        currentDay === 6 &&
-        (currentHour > workingHoursEnd[0] || (currentHour === workingHoursEnd[0] && currentMinutes >= workingHoursEnd[1]))
-    ) {
-        // Якщо сьогодні субота і час після робочого часу, наступний доступний день — понеділок
+    // Логіка визначення наступного доступного дня
+    if (currentDay === 6 && (currentHour > workingHoursEnd[0] || (currentHour === workingHoursEnd[0] && currentMinutes >= workingHoursEnd[1]))) {
+        // Якщо сьогодні субота і час після 15:30, наступний доступний день — понеділок
         nextAvailableDay.setDate(currentDate.getDate() + 2);
-    } else if (
-        currentHour > workingHoursEnd[0] ||
-        (currentHour === workingHoursEnd[0] && currentMinutes >= workingHoursEnd[1])
-    ) {
-        // Якщо зараз після робочого часу, замовлення доступне завтра
+    } else if (currentHour > workingHoursEnd[0] || (currentHour === workingHoursEnd[0] && currentMinutes >= workingHoursEnd[1])) {
+        // Якщо зараз після 15:30, замовлення доступне завтра
         nextAvailableDay.setDate(currentDate.getDate() + 1);
     }
 
     if (toppingsBlock && productContent) {
         // Перевірка, чи зараз у робочий час
         if (
-            currentDate >= specialOpeningDate &&
             (currentHour > workingHoursStart[0] || (currentHour === workingHoursStart[0] && currentMinutes >= workingHoursStart[1])) &&
             (currentHour < workingHoursEnd[0] || (currentHour === workingHoursEnd[0] && currentMinutes < workingHoursEnd[1]))
         ) {
@@ -398,15 +385,12 @@ document.addEventListener('DOMContentLoaded', function () {
         const nextDayOfWeek = daysOfWeekUA[nextAvailableDay.getDay()];
         const startTime = `${workingHoursStart[0].toString().padStart(2, '0')}:${workingHoursStart[1].toString().padStart(2, '0')}`;
         const endTime = `${workingHoursEnd[0].toString().padStart(2, '0')}:${workingHoursEnd[1].toString().padStart(2, '0')}`;
-        const specialStartTime = `${specialOpeningDate.getHours().toString().padStart(2, '0')}:${specialOpeningDate.getMinutes().toString().padStart(2, '0')}`;
         let informationText;
 
         if (type === 'today') {
             informationText = `Замовлення їжі зараз закрито, будь ласка, повертайтесь до нас: <br><strong class="bold-text">Сьогодні з ${startTime} до ${endTime}</strong>`;
-        } else if (currentDate < specialOpeningDate) {
-            informationText = `Замовлення їжі зараз закрито, будь ласка, повертайтесь до нас: <br><strong class="bold-text">2 січня з ${specialStartTime}</strong>`;
         } else {
-            informationText = `Замовлення їжі зараз закрито, будь ласка, повертайтесь до нас: <br><strong class="bold-text">${nextDayOfWeek} з ${startTime} до ${endTime}</strong>`;
+            informationText = `Замовлення їжі зараз закрито, будь ласка, повертайтесь до нас: <br><strong class="bold-text">В Четвер з 12:00 до 20:00</strong>`;
         }
 
         const newInformationBlock = document.createElement('div');
@@ -421,6 +405,5 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 });
-
 
 
