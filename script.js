@@ -390,7 +390,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (type === 'today') {
             informationText = `Замовлення їжі зараз закрито, будь ласка, повертайтесь до нас: <br><strong class="bold-text">В понеділок з ${startTime} до ${endTime}</strong>`;
         } else {
-            informationText = `Замовлення їжі зараз закрито, будь ласка, повертайтесь до нас: <br><strong class="bold-text">В понеділок з з ${startTime} до 20:40</strong>`;
+            informationText = `Замовлення їжі зараз закрито, будь ласка, повертайтесь до нас: <br><strong class="bold-text">В понеділок з ${startTime} до 20:40</strong>`;
         }
 
         const newInformationBlock = document.createElement('div');
