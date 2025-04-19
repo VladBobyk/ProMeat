@@ -337,7 +337,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const productContent = document.querySelectorAll('.product_content');
 
     // Робочий графік: старт і кінець часу (вказано у форматі [години, хвилини])
-    const workingHoursStart = [10, 0]; // Початок: 10:00
+    const workingHoursStart = [12, 00]; // Початок: 10:00
     const workingHoursEnd = [20, 40]; // Кінець: 20:40
 
     let nextAvailableDay = new Date(currentDate); // Початково припускаємо, що доступний день — сьогодні
@@ -388,9 +388,9 @@ document.addEventListener('DOMContentLoaded', function () {
         let informationText;
 
         if (type === 'today') {
-            informationText = `Замовлення їжі зараз закрито, будь ласка, повертайтесь до нас: <br><strong class="bold-text">Сьогодні з ${startTime} до ${endTime}</strong>`;
+            informationText = `Замовлення їжі зараз закрито, будь ласка, повертайтесь до нас: <br><strong class="bold-text">В понеділок з ${startTime} до ${endTime}</strong>`;
         } else {
-            informationText = `Замовлення їжі зараз закрито, будь ласка, повертайтесь до нас: <br><strong class="bold-text">${nextDayOfWeek} з ${startTime} до ${endTime}</strong>`;
+            informationText = `Замовлення їжі зараз закрито, будь ласка, повертайтесь до нас: <br><strong class="bold-text">В понеділок з з ${startTime} до ${endTime}</strong>`;
         }
 
         const newInformationBlock = document.createElement('div');
