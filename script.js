@@ -337,8 +337,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const productContent = document.querySelectorAll('.product_content');
 
     // Робочий графік: старт і кінець часу (вказано у форматі [години, хвилини])
-    const workingHoursStart = [09, 00]; // Початок: 10:00
-    const workingHoursEnd = [10, 00]; // Кінець: 20:40
+    const workingHoursStart = [12, 00]; // Початок: 10:00
+    const workingHoursEnd = [20, 40]; // Кінець: 20:40
 
     let nextAvailableDay = new Date(currentDate); // Початково припускаємо, що доступний день — сьогодні
 
