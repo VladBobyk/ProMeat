@@ -1,4 +1,65 @@
+// Код для карточки товару
+document.addEventListener('DOMContentLoaded', function () {
+    var checkboxes = document.querySelectorAll('input[type="checkbox"][price_add]');
+    var priceElement = document.querySelector('.price');
+    var quantityInputCard = document.getElementById('quantity_card');
 
+    // Отримання початкової ціни із атрибуту price, заміна коми на крапку
+    var initialPrice = parseFloat(priceElement.getAttribute('price').replace(',', '.')) || 0;
+
+    checkboxes.forEach(function (checkbox) {
+        checkbox.addEventListener('change', function () {
+            updatePrice();
+        });
+    });
+
+    quantityInputCard.addEventListener('input', function () {
+        updatePrice();
+    });
+
+    $('.plus').click(function () {
+        if (quantityInputCard.value < 100) {
+            quantityInputCard.value = +quantityInputCard.value + 1;
+            updatePrice();
+        }
+    });
+
+    $('.minus').click(function () {
+        if (quantityInputCard.value > 1) {
+            quantityInputCard.value = +quantityInputCard.value - 1;
+            updatePrice();
+        }
+    });
+
+    // Встановлення початкового значення 1
+    $('input[type="number"]').val(1);
+
+    // Заборона встановлення значення менше 1
+    $('input[type="number"]').on('input', function () {
+        if ($(this).val() < 1) {
+            $(this).val(1);
+        }
+    });
+
+    // Оновлення значення в 'value' при введенні
+    $('input[type="number"]').on('input', function () {
+        updatePrice(); // Оновлення ціни при введенні значення
+    });
+
+    function updatePrice() {
+        var totalPrice = initialPrice;
+
+        checkboxes.forEach(function (checkbox) {
+            if (checkbox.checked) {
+                var priceAdd = parseFloat(checkbox.getAttribute('price_add')) || 0;
+                totalPrice += priceAdd;
+            }
+        });
+        // Оновлення вмісту елемента з ціною та атрибуту price
+        priceElement.textContent = (totalPrice * quantityInputCard.value).toFixed(2) + ' ₴';
+        priceElement.setAttribute('price', totalPrice.toFixed(2));
+    }
+});
 
 
 
