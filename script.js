@@ -1,105 +1,269 @@
-
-
-
-
-
-
-
-
-
-
-
-// Код для кошика
-var cartItemsContainer;
-var savedCartItems;
-var originalTotalPrice = 0;
-var promoCodeApplied = false;
-
-function updateCartNumber() {
-    var itemCount = $('#cart-items').children('.cart-item').length;
-    $('.cart_number').text(itemCount);
-}
-
-function saveCart() {
-    var cartItems = Array.from(cartItemsContainer.children()).map(item => {
-        var initialPricePerUnit = parseFloat($(item).data('initial-price')) || 0;
-        var quantity = parseInt($(item).find('.quantity_cart').val(), 10) || 1;
-        var totalPrice = initialPricePerUnit * quantity;
-
-        if (!isNaN(totalPrice)) {
-            $(item).find('.cart_price').text(`${formatPrice(totalPrice)} ₴`);
+// Product Card JS - Complete Solution for Webflow (Without Reference Price)
+document.addEventListener('DOMContentLoaded', function() {
+    // Cache DOM elements
+    const priceElement = document.querySelector('.price');
+    const quantityInput = document.getElementById('quantity_card');
+    const plusButton = document.querySelector('.plus');
+    const minusButton = document.querySelector('.minus');
+    const checkboxes = document.querySelectorAll('input[type="checkbox"][price_add]');
+    
+    // Guard clause if essential elements are missing
+    if (!priceElement || !quantityInput) {
+        console.error('Required elements not found on page');
+        return;
+    }
+    
+    // Determine if this is a weight-based product
+    const isWeightBased = priceElement.hasAttribute('weight-based');
+    const weightStep = parseInt(priceElement.getAttribute('weight-step')) || 100; // Default step: 100g
+    const minWeight = parseInt(priceElement.getAttribute('min-weight')) || weightStep; // Default min: same as step
+    const referenceWeight = parseInt(priceElement.getAttribute('reference-weight')) || 100; // Default reference: 100g
+    
+    // Parse initial price with better error handling (price per reference weight unit)
+    const initialPrice = parseFloat(priceElement.getAttribute('price')?.replace(',', '.')) || 0;
+    
+    // Create unit label if it doesn't exist
+    let unitLabelElement = document.querySelector('.unit-label');
+    if (!unitLabelElement) {
+        unitLabelElement = document.createElement('span');
+        unitLabelElement.className = 'unit-label';
+        quantityInput.parentNode.insertBefore(unitLabelElement, quantityInput.nextSibling);
+    }
+    
+    // Set unit label (pieces or grams)
+    const unitLabel = isWeightBased ? 'г' : 'шт';
+    if (unitLabelElement) {
+        unitLabelElement.textContent = unitLabel;
+    }
+    
+    // Set initial value and enforce minimum
+    if (isWeightBased) {
+        // For weight-based products, set appropriate attributes and initial value
+        quantityInput.value = Math.max(minWeight, Math.round(parseInt(quantityInput.value || minWeight) / weightStep) * weightStep);
+        quantityInput.setAttribute('step', weightStep);
+        quantityInput.setAttribute('min', minWeight);
+    } else {
+        // For quantity-based products
+        quantityInput.value = Math.max(1, parseInt(quantityInput.value) || 1);
+        quantityInput.setAttribute('step', 1);
+        quantityInput.setAttribute('min', 1);
+    }
+    
+    /**
+     * Updates the displayed price based on quantity/weight and selected options
+     */
+    function updatePrice() {
+        let basePricePerUnit = initialPrice;
+        
+        // Add prices from checked options
+        checkboxes.forEach(checkbox => {
+            if (checkbox.checked) {
+                const additionalPrice = parseFloat(checkbox.getAttribute('price_add')) || 0;
+                basePricePerUnit += additionalPrice;
+            }
+        });
+        
+        // Calculate final price
+        let finalPrice;
+        if (isWeightBased) {
+            // For weight-based: (price per reference weight) * (selected weight / reference weight)
+            const weight = Math.max(minWeight, parseInt(quantityInput.value) || minWeight);
+            finalPrice = (basePricePerUnit * (weight / referenceWeight)).toFixed(2);
+            
+            // Make sure weight is properly aligned with step
+            const alignedWeight = Math.round(weight / weightStep) * weightStep;
+            if (alignedWeight !== weight) {
+                quantityInput.value = alignedWeight;
+            }
         } else {
-            totalPrice = 0;
-            $(item).find('.cart_price').text(`${totalPrice} ₴`);
+            // For quantity-based: price * quantity
+            const quantity = Math.max(1, parseInt(quantityInput.value) || 1);
+            finalPrice = (basePricePerUnit * quantity).toFixed(2);
         }
-
-        return {
-            html: item.outerHTML,
-            initialPricePerUnit: initialPricePerUnit,
-            quantity: quantity
-        };
+        
+        // Update price display
+        priceElement.textContent = `${finalPrice} ₴`;
+        
+        // Store current base price for future calculations
+        priceElement.setAttribute('current-base-price', basePricePerUnit.toFixed(2));
+        
+        // Trigger custom event for other components that might need to know
+        priceElement.dispatchEvent(new CustomEvent('priceUpdated', { 
+            detail: { 
+                basePrice: basePricePerUnit, 
+                isWeightBased: isWeightBased,
+                quantity: isWeightBased ? null : parseInt(quantityInput.value),
+                weight: isWeightBased ? parseInt(quantityInput.value) : null,
+                finalPrice: parseFloat(finalPrice)
+            } 
+        }));
+    }
+    
+    // Event Listeners
+    
+    // Checkbox change events
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updatePrice);
     });
+    
+    // Quantity/Weight input events
+    quantityInput.addEventListener('input', function() {
+        if (isWeightBased) {
+            // For weight-based products
+            let currentVal = parseInt(this.value) || 0;
+            
+            // Enforce minimum weight
+            if (currentVal < minWeight) {
+                currentVal = minWeight;
+                this.value = minWeight;
+            }
+            
+            // Align to weight step
+            const remainder = currentVal % weightStep;
+            if (remainder !== 0) {
+                // Round to nearest step
+                currentVal = Math.round(currentVal / weightStep) * weightStep;
+                this.value = currentVal;
+            }
+        } else {
+            // For quantity-based products
+            if (this.value < 1 || !this.value) {
+                this.value = 1;
+            }
+            
+            if (this.value > 100) {
+                this.value = 100;
+            }
+        }
+        
+        updatePrice();
+    });
+    
+    // Plus button
+    if (plusButton) {
+        plusButton.addEventListener('click', function(e) {
+            e.preventDefault(); // Prevent default behavior
+            const currentVal = parseInt(quantityInput.value) || 0;
+            
+            if (isWeightBased) {
+                quantityInput.value = currentVal + weightStep;
+            } else if (currentVal < 100) {
+                quantityInput.value = currentVal + 1;
+            }
+            
+            updatePrice();
+        });
+    }
+    
+    // Minus button
+    if (minusButton) {
+        minusButton.addEventListener('click', function(e) {
+            e.preventDefault(); // Prevent default behavior
+            const currentVal = parseInt(quantityInput.value) || 0;
+            
+            if (isWeightBased) {
+                if (currentVal > minWeight) {
+                    quantityInput.value = currentVal - weightStep;
+                }
+            } else if (currentVal > 1) {
+                quantityInput.value = currentVal - 1;
+            }
+            
+            updatePrice();
+        });
+    }
+    
+    // Initialize price display
+    updatePrice();
+});
+
+
+
+// === Cart Variables ===
+let cartItemsContainer, savedCartItems;
+let originalTotalPrice = 0;
+let promoCodeApplied = false;
+
+// === Utility Functions ===
+const formatPrice = price => {
+    const formatted = price.toFixed(2);
+    return formatted.endsWith('.00') ? formatted.slice(0, -3) : formatted;
+};
+
+const updateCartNumber = () => {
+    $('.cart_number').text($('#cart-items .cart-item').length);
+};
+
+const updateCartPrice = (cartItem, quantity) => {
+    const pricePerUnit = parseFloat(cartItem.data('initial-price')) || 0;
+    const totalPrice = pricePerUnit * quantity;
+    cartItem.find('.cart_price').text(`${formatPrice(totalPrice)} ₴`);
+};
+
+const calculatePackagingPrice = () => {
+    let total = 0;
+    $('.cart-item').each(function () {
+        const quantity = parseInt($(this).find('.quantity_cart').val(), 10) || 1;
+        const packagingPrice = parseFloat($(this).data('packaging')) || 0;
+        total += packagingPrice * quantity;
+    });
+    return total;
+};
+
+const updateCartTotal = () => {
+    let total = 0;
+    $('.cart-item').each(function () {
+        const priceText = $(this).find('.cart_price').text().replace('₴', '').trim();
+        const price = parseFloat(priceText) || 0;
+        total += price;
+    });
+
+    const packagingTotal = calculatePackagingPrice();
+    total += packagingTotal;
+
+    $('.cart_total-price').text(`${formatPrice(total)} ₴`);
+    $('.packaging_price').text(`${formatPrice(packagingTotal)} ₴`);
+    originalTotalPrice = total;
+};
+
+const saveCart = () => {
+    const cartItems = $('#cart-items .cart-item').map(function () {
+        const $item = $(this);
+        return {
+            html: this.outerHTML,
+            initialPricePerUnit: parseFloat($item.data('initial-price')) || 0,
+            quantity: parseInt($item.find('.quantity_cart').val(), 10) || 1
+        };
+    }).get();
 
     localStorage.setItem('cartItems', JSON.stringify(cartItems));
     updateCartTotal();
     updateCartNumber();
-}
+};
 
-function updateCartTotal() {
-    var total = 0;
-    var packagingTotal = 0; // Змінна для вартості упаковки
-
-    $('.cart-item .cart_price').each(function () {
-        var priceText = $(this).text().replace('₴', '');
-        var price = parseFloat(priceText);
-        if (!isNaN(price)) {
-            total += price;
-        }
-    });
-
-    // Розраховуємо вартість упаковки для кожного товару
-    $('.cart-item').each(function () {
-        var quantity = parseInt($(this).find('.quantity_cart').val(), 10) || 1;
-        var packagingPrice = parseInt($(this).data('packaging')) || 0;
-        packagingTotal += packagingPrice * quantity;
-    });
-
-    // Додаємо вартість упаковки до загальної вартості
-    total += packagingTotal;
-
-    if (total > 0) {
-        $('.cart_total-price').text(`${formatPrice(total)} ₴`);
-        originalTotalPrice = total; // Зберегти початкову загальну вартість
-    } else {
-        $('.cart_total-price').text(`0 ₴`);
-    }
-
-    // Виводимо вартість упаковки в відповідний елемент
-    $('.packaging_price').text(`${formatPrice(packagingTotal)} ₴`);
-}
-function formatPrice(price) {
-    // Відображення значення після крапки, якщо воно більше 0
-    var formattedPrice = price.toFixed(2);
-    return formattedPrice.endsWith('.00') ? formattedPrice.split('.')[0] : formattedPrice;
-}
-
-function restoreCart(savedCartItems) {
-    cartItemsContainer.html(savedCartItems.map(item => item.html).join(''));
+const restoreCart = items => {
+    cartItemsContainer.html(items.map(item => item.html).join(''));
     updateCartTotal();
     updateCartNumber();
-}
+};
 
-function addToCart() {
-    var burgerImage = $('.img_block img').attr('src');
-    var burgerName = $('.product_title').text();
-    var burgerIngredients = getSelectedIngredients().replace(/, /g, '<br>');
-    var burgerQuantity = $('#quantity_card').val();
-    var burgerPricePerUnit = parseFloat($('.price').attr('price')) || 0;
-    var packaging = $('.product_title').attr('packaging'); // Отримуємо значення атрибуту packaging
+// === Cart Actions ===
+const getSelectedIngredients = () => {
+    return $('input[data-name="add"]:checked').map(function () {
+        return $(this).next('span').text().trim();
+    }).get().join('<br>');
+};
 
-    var itemId = 'item_' + Date.now();
+const addToCart = () => {
+    const burgerImage = $('.img_block img').attr('src') || '';
+    const burgerName = $('.product_title').text() || '';
+    const burgerIngredients = getSelectedIngredients();
+    const burgerQuantity = Math.max(parseInt($('#quantity_card').val(), 10) || 1, 1);
+    const burgerPricePerUnit = parseFloat($('.price').attr('price')) || 0;
+    const packaging = $('.product_title').attr('packaging') || 0;
+    const itemId = `item_${Date.now()}`;
 
-    var cartItem = `
+    const cartItem = `
         <div class="cart-item" data-item-id="${itemId}" data-initial-price="${burgerPricePerUnit}" data-packaging="${packaging}">
             <div class="cart-items_left">
                 <img class="burger-image" src="${burgerImage}" alt="${burgerName}">
@@ -107,9 +271,9 @@ function addToCart() {
                     <h4 class="cart_product_title" packaging="${packaging}">${burgerName}</h4>
                     <p class="ingredients-list cart_ingredients">${burgerIngredients}</p>
                     <div class="product_quantity product_quantity_cart">
-                        <a href="#" class="minus minus_cart w-inline-block" id="minus_cart">-</a>
-                        <input type="number" class="quantity quantity_cart w-input" maxlength="256" name="Quantity" data-name="Quantity" placeholder="" id="Quantity" value="${Math.max(burgerQuantity, 1)}" required="" min="1">
-                        <a href="#" class="plus plus_cart w-inline-block" id="plus_cart">+</a>
+                        <a href="#" class="minus minus_cart w-inline-block">-</a>
+                        <input type="number" class="quantity quantity_cart w-input" value="${burgerQuantity}" min="1">
+                        <a href="#" class="plus plus_cart w-inline-block">+</a>
                     </div>
                 </div>
             </div>
@@ -121,86 +285,36 @@ function addToCart() {
         </div>
     `;
 
-    console.log('Burger Ingredients:', burgerIngredients);
-
     cartItemsContainer.append(cartItem);
     saveCart();
-    updateCartNumber();
 
     $('.add_card').text('Додано в кошик');
+    setTimeout(() => $('.add_card').text('Додати в кошик'), 5000);
+};
 
-    setTimeout(function() {
-        $('.add_card').text('Додати в кошик');
-    }, 5000);
-}
-
-function getSelectedIngredients() {
-    var selectedIngredients = [];
-
-    $('input[data-name="add"]:checked').each(function () {
-        var ingredientName = $(this).next('span').text().trim();
-        selectedIngredients.push(ingredientName);
-    });
-
-    return selectedIngredients.join(', ');
-}
-
-function updateCartPrice(cartItem, newQuantity) {
-    var initialPricePerUnit = parseFloat(cartItem.data('initial-price'));
-    var totalPrice = initialPricePerUnit * newQuantity;
-    cartItem.find('.cart_price').text(`${formatPrice(totalPrice)} ₴`);
-}
-
-function removeFromCart(button) {
-    var itemId = $(button).closest('.cart-item').data('item-id');
-    $(`[data-item-id="${itemId}"]`).remove();
+const removeFromCart = button => {
+    $(button).closest('.cart-item').remove();
     saveCart();
-    updateCartTotal();
-    updateCartNumber();
-}
+};
 
-function decreaseQuantity(cartItem) {
-    var quantityInput = cartItem.find('.quantity_cart');
-    var currentQuantity = parseInt(quantityInput.val(), 10);
-    var newQuantity = Math.max(currentQuantity - 1, 1);
+const changeQuantity = (button, increment) => {
+    const cartItem = $(button).closest('.cart-item');
+    const quantityInput = cartItem.find('.quantity_cart');
+    let quantity = parseInt(quantityInput.val(), 10) || 1;
+    quantity = Math.max(quantity + increment, 1);
 
-    quantityInput.val(newQuantity);
-    updateCartPrice(cartItem, newQuantity);
+    quantityInput.val(quantity);
+    updateCartPrice(cartItem, quantity);
     saveCart();
-    updateCartTotal();
-    updateCartNumber();
-}
+};
 
-function increaseQuantity(cartItem) {
-    var quantityInput = cartItem.find('.quantity_cart');
-    var currentQuantity = parseInt(quantityInput.val(), 10);
-    var newQuantity = currentQuantity + 1;
-
-    quantityInput.val(newQuantity);
-    updateCartPrice(cartItem, newQuantity);
-    saveCart();
-    updateCartTotal();
-    updateCartNumber();
-}
-
-// Оновлення вартості упаковки
-function calculatePackagingPrice() {
-    var totalPackagingPrice = 0;
-    $('.cart-item').each(function () {
-        var quantity = parseInt($(this).find('.quantity_cart').val(), 10) || 1;
-        var packagingPrice = parseInt($(this).data('packaging')) || 0;
-        totalPackagingPrice += (packagingPrice * quantity);
-    });
-    return totalPackagingPrice;
-}
-
-$(document).ready(function () {
+// === Event Bindings ===
+$(document).ready(() => {
     cartItemsContainer = $('#cart-items');
     savedCartItems = JSON.parse(localStorage.getItem('cartItems')) || [];
-
     restoreCart(savedCartItems);
 
-    $('.add_card').on('click', function (e) {
+    $('.add_card').on('click', e => {
         e.preventDefault();
         addToCart();
     });
@@ -211,33 +325,23 @@ $(document).ready(function () {
 
     $(document).on('click', '.minus_cart', function (e) {
         e.preventDefault();
-        var cartItem = $(this).closest('.cart-item');
-        decreaseQuantity(cartItem);
+        changeQuantity(this, -1);
     });
 
     $(document).on('click', '.plus_cart', function (e) {
         e.preventDefault();
-        var cartItem = $(this).closest('.cart-item');
-        increaseQuantity(cartItem);
+        changeQuantity(this, 1);
     });
 
-    $('#button-promo').on('click', function() {
-        applyPromoCode();
-    });
+    $('#button-promo').on('click', applyPromoCode);
 
-    $('#promo-code').on('paste', function (e) {
-        if (promoCodeApplied) {
-            e.preventDefault();
-        }
-    });
-
-    $('#promo-code').on('keydown', function (e) {
-        if (e.keyCode === 13) {
-            e.preventDefault();
-            return false;
-        }
+    $('#promo-code').on('paste', e => {
+        if (promoCodeApplied) e.preventDefault();
+    }).on('keydown', e => {
+        if (e.keyCode === 13) e.preventDefault();
     });
 });
+
 
 
 
