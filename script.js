@@ -186,7 +186,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 
-// Код для кошика
+// Cart Management Script
 var cartItemsContainer;
 var savedCartItems;
 var originalTotalPrice = 0;
@@ -207,7 +207,7 @@ function saveCart() {
             $(item).find('.cart_price').text(`${formatPrice(totalPrice)} ₴`);
         } else {
             totalPrice = 0;
-            $(item).find('.cart_price').text(`${totalPrice} ₴`);
+            $(item).find('.cart_price').text(`0 ₴`);
         }
 
         return {
@@ -224,38 +224,39 @@ function saveCart() {
 
 function updateCartTotal() {
     var total = 0;
-    var packagingTotal = 0; // Змінна для вартості упаковки
+    var packagingTotal = 0; // Packaging cost variable
 
     $('.cart-item .cart_price').each(function () {
-        var priceText = $(this).text().replace('₴', '');
+        var priceText = $(this).text().replace('₴', '').trim();
         var price = parseFloat(priceText);
         if (!isNaN(price)) {
             total += price;
         }
     });
 
-    // Розраховуємо вартість упаковки для кожного товару
+    // Calculate packaging cost for each item
     $('.cart-item').each(function () {
         var quantity = parseInt($(this).find('.quantity_cart').val(), 10) || 1;
         var packagingPrice = parseInt($(this).data('packaging')) || 0;
         packagingTotal += packagingPrice * quantity;
     });
 
-    // Додаємо вартість упаковки до загальної вартості
+    // Add packaging cost to the total price
     total += packagingTotal;
 
     if (total > 0) {
         $('.cart_total-price').text(`${formatPrice(total)} ₴`);
-        originalTotalPrice = total; // Зберегти початкову загальну вартість
+        originalTotalPrice = total; // Save initial total price
     } else {
         $('.cart_total-price').text(`0 ₴`);
     }
 
-    // Виводимо вартість упаковки в відповідний елемент
+    // Display packaging cost in the corresponding element
     $('.packaging_price').text(`${formatPrice(packagingTotal)} ₴`);
 }
+
 function formatPrice(price) {
-    // Відображення значення після крапки, якщо воно більше 0
+    // Display value after decimal if greater than 0
     var formattedPrice = price.toFixed(2);
     return formattedPrice.endsWith('.00') ? formattedPrice.split('.')[0] : formattedPrice;
 }
@@ -272,7 +273,7 @@ function addToCart() {
     var burgerIngredients = getSelectedIngredients().replace(/, /g, '<br>');
     var burgerQuantity = $('#quantity_card').val();
     var burgerPricePerUnit = parseFloat($('.price').attr('price')) || 0;
-    var packaging = $('.product_title').attr('packaging'); // Отримуємо значення атрибуту packaging
+    var packaging = $('.product_title').attr('packaging'); // Get the packaging attribute value
 
     var itemId = 'item_' + Date.now();
 
@@ -281,19 +282,18 @@ function addToCart() {
             <div class="cart-items_left">
                 <img class="burger-image" src="${burgerImage}" alt="${burgerName}">
                 <div class="cart_info">
-                    <h4 class="cart_product_title" packaging="${packaging}">${burgerName}</h4>
+                    <h4 class="cart_product_title">${burgerName}</h4>
                     <p class="ingredients-list cart_ingredients">${burgerIngredients}</p>
                     <div class="product_quantity product_quantity_cart">
-                        <a href="#" class="minus minus_cart w-inline-block" id="minus_cart">-</a>
-                        <input type="number" class="quantity quantity_cart w-input" maxlength="256" name="Quantity" data-name="Quantity" placeholder="" id="Quantity" value="${Math.max(burgerQuantity, 1)}" required="" min="1">
-                        <a href="#" class="plus plus_cart w-inline-block" id="plus_cart">+</a>
+                        <a href="#" class="minus minus_cart w-inline-block">-</a>
+                        <input type="number" class="quantity quantity_cart w-input" value="${Math.max(burgerQuantity, 1)}" required min="1">
+                        <a href="#" class="plus plus_cart w-inline-block">+</a>
                     </div>
                 </div>
             </div>
             <div class="cart-items_right">
                 <p class="cart_price">${formatPrice(burgerPricePerUnit * burgerQuantity)} ₴</p>
                 <button class="remove-from-cart">Видалити</button>
-                <div class="burger-details"></div>
             </div>
         </div>
     `;
@@ -360,17 +360,6 @@ function increaseQuantity(cartItem) {
     updateCartNumber();
 }
 
-// Оновлення вартості упаковки
-function calculatePackagingPrice() {
-    var totalPackagingPrice = 0;
-    $('.cart-item').each(function () {
-        var quantity = parseInt($(this).find('.quantity_cart').val(), 10) || 1;
-        var packagingPrice = parseInt($(this).data('packaging')) || 0;
-        totalPackagingPrice += (packagingPrice * quantity);
-    });
-    return totalPackagingPrice;
-}
-
 $(document).ready(function () {
     cartItemsContainer = $('#cart-items');
     savedCartItems = JSON.parse(localStorage.getItem('cartItems')) || [];
@@ -396,23 +385,6 @@ $(document).ready(function () {
         e.preventDefault();
         var cartItem = $(this).closest('.cart-item');
         increaseQuantity(cartItem);
-    });
-
-    $('#button-promo').on('click', function() {
-        applyPromoCode();
-    });
-
-    $('#promo-code').on('paste', function (e) {
-        if (promoCodeApplied) {
-            e.preventDefault();
-        }
-    });
-
-    $('#promo-code').on('keydown', function (e) {
-        if (e.keyCode === 13) {
-            e.preventDefault();
-            return false;
-        }
     });
 });
 
