@@ -179,167 +179,90 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 
-// === Cart Variables ===
-let cartItemsContainer, savedCartItems;
-let originalTotalPrice = 0;
-let promoCodeApplied = false;
 
-// === Utility Functions ===
-const formatPrice = price => {
-    const formatted = price.toFixed(2);
-    return formatted.endsWith('.00') ? formatted.slice(0, -3) : formatted;
-};
 
-const updateCartNumber = () => {
-    $('.cart_number').text($('#cart-items .cart-item').length);
-};
 
-const updateCartPrice = (cartItem, quantity) => {
-    const pricePerUnit = parseFloat(cartItem.data('initial-price')) || 0;
-    const totalPrice = pricePerUnit * quantity;
-    cartItem.find('.cart_price').text(`${formatPrice(totalPrice)} ₴`);
-};
 
-const calculatePackagingPrice = () => {
-    let total = 0;
-    $('.cart-item').each(function () {
-        const quantity = parseInt($(this).find('.quantity_cart').val(), 10) || 1;
-        const packagingPrice = parseFloat($(this).data('packaging')) || 0;
-        total += packagingPrice * quantity;
-    });
-    return total;
-};
 
-const updateCartTotal = () => {
-    let total = 0;
-    $('.cart-item').each(function () {
-        const priceText = $(this).find('.cart_price').text().replace('₴', '').trim();
-        const price = parseFloat(priceText) || 0;
-        total += price;
-    });
 
-    const packagingTotal = calculatePackagingPrice();
-    total += packagingTotal;
+// Кошик
+document.addEventListener('DOMContentLoaded', function () {
+  const priceElement = document.getElementById('price');
+  const quantityInput = document.getElementById('quantity_card');
+  const plusButton = document.getElementById('plus');
+  const minusButton = document.getElementById('minus');
+  const addToCartButton = document.querySelector('.add_card');
+  
+  const basePrice = parseFloat(priceElement.getAttribute('price'));
+  const isWeightBased = priceElement.getAttribute('weight-based') === 'true';
+  const weightStep = parseInt(priceElement.getAttribute('weight-step')) || 1;
+  const referenceWeight = parseInt(priceElement.getAttribute('reference-weight')) || 100;
+  
+  // Set correct initial step
+  quantityInput.step = weightStep;
+  quantityInput.min = weightStep;
 
-    $('.cart_total-price').text(`${formatPrice(total)} ₴`);
-    $('.packaging_price').text(`${formatPrice(packagingTotal)} ₴`);
-    originalTotalPrice = total;
-};
+  function updatePriceDisplay() {
+    let quantity = parseInt(quantityInput.value) || weightStep;
 
-const saveCart = () => {
-    const cartItems = $('#cart-items .cart-item').map(function () {
-        const $item = $(this);
-        return {
-            html: this.outerHTML,
-            initialPricePerUnit: parseFloat($item.data('initial-price')) || 0,
-            quantity: parseInt($item.find('.quantity_cart').val(), 10) || 1
-        };
-    }).get();
+    let finalPrice;
+    if (isWeightBased) {
+      finalPrice = (quantity / referenceWeight) * basePrice;
+    } else {
+      finalPrice = quantity * basePrice;
+    }
+    
+    finalPrice = Math.round(finalPrice * 100) / 100; // Round to 2 decimals
+    priceElement.textContent = `${finalPrice} ₴`;
+  }
 
-    localStorage.setItem('cartItems', JSON.stringify(cartItems));
-    updateCartTotal();
-    updateCartNumber();
-};
+  plusButton.addEventListener('click', function (e) {
+    e.preventDefault();
+    let current = parseInt(quantityInput.value) || weightStep;
+    quantityInput.value = current + weightStep;
+    updatePriceDisplay();
+  });
 
-const restoreCart = items => {
-    cartItemsContainer.html(items.map(item => item.html).join(''));
-    updateCartTotal();
-    updateCartNumber();
-};
+  minusButton.addEventListener('click', function (e) {
+    e.preventDefault();
+    let current = parseInt(quantityInput.value) || weightStep;
+    if (current > weightStep) {
+      quantityInput.value = current - weightStep;
+      updatePriceDisplay();
+    }
+  });
 
-// === Cart Actions ===
-const getSelectedIngredients = () => {
-    return $('input[data-name="add"]:checked').map(function () {
-        return $(this).next('span').text().trim();
-    }).get().join('<br>');
-};
+  quantityInput.addEventListener('input', function () {
+    updatePriceDisplay();
+  });
 
-const addToCart = () => {
-    const burgerImage = $('.img_block img').attr('src') || '';
-    const burgerName = $('.product_title').text() || '';
-    const burgerIngredients = getSelectedIngredients();
-    const burgerQuantity = Math.max(parseInt($('#quantity_card').val(), 10) || 1, 1);
-    const burgerPricePerUnit = parseFloat($('.price').attr('price')) || 0;
-    const packaging = $('.product_title').attr('packaging') || 0;
-    const itemId = `item_${Date.now()}`;
+  // 🛒 Add to Cart logic
+  addToCartButton.addEventListener('click', function (e) {
+    e.preventDefault();
+    
+    const quantity = parseInt(quantityInput.value) || weightStep;
+    let finalPrice;
 
-    const cartItem = `
-        <div class="cart-item" data-item-id="${itemId}" data-initial-price="${burgerPricePerUnit}" data-packaging="${packaging}">
-            <div class="cart-items_left">
-                <img class="burger-image" src="${burgerImage}" alt="${burgerName}">
-                <div class="cart_info">
-                    <h4 class="cart_product_title" packaging="${packaging}">${burgerName}</h4>
-                    <p class="ingredients-list cart_ingredients">${burgerIngredients}</p>
-                    <div class="product_quantity product_quantity_cart">
-                        <a href="#" class="minus minus_cart w-inline-block">-</a>
-                        <input type="number" class="quantity quantity_cart w-input" value="${burgerQuantity}" min="1">
-                        <a href="#" class="plus plus_cart w-inline-block">+</a>
-                    </div>
-                </div>
-            </div>
-            <div class="cart-items_right">
-                <p class="cart_price">${formatPrice(burgerPricePerUnit * burgerQuantity)} ₴</p>
-                <button class="remove-from-cart">Видалити</button>
-                <div class="burger-details"></div>
-            </div>
-        </div>
-    `;
+    if (isWeightBased) {
+      finalPrice = (quantity / referenceWeight) * basePrice;
+    } else {
+      finalPrice = quantity * basePrice;
+    }
 
-    cartItemsContainer.append(cartItem);
-    saveCart();
+    finalPrice = Math.round(finalPrice * 100) / 100; // Round nicely
 
-    $('.add_card').text('Додано в кошик');
-    setTimeout(() => $('.add_card').text('Додати в кошик'), 5000);
-};
-
-const removeFromCart = button => {
-    $(button).closest('.cart-item').remove();
-    saveCart();
-};
-
-const changeQuantity = (button, increment) => {
-    const cartItem = $(button).closest('.cart-item');
-    const quantityInput = cartItem.find('.quantity_cart');
-    let quantity = parseInt(quantityInput.val(), 10) || 1;
-    quantity = Math.max(quantity + increment, 1);
-
-    quantityInput.val(quantity);
-    updateCartPrice(cartItem, quantity);
-    saveCart();
-};
-
-// === Event Bindings ===
-$(document).ready(() => {
-    cartItemsContainer = $('#cart-items');
-    savedCartItems = JSON.parse(localStorage.getItem('cartItems')) || [];
-    restoreCart(savedCartItems);
-
-    $('.add_card').on('click', e => {
-        e.preventDefault();
-        addToCart();
+    // 🛒 Now you can send quantity and price where needed
+    console.log('Add to Cart:', {
+      quantity: quantity,
+      price: finalPrice
     });
 
-    $(document).on('click', '.remove-from-cart', function () {
-        removeFromCart(this);
-    });
+    // Example: If you need to trigger your system, you can call your functions here
+    // addToCartSystem(quantity, finalPrice);
+  });
 
-    $(document).on('click', '.minus_cart', function (e) {
-        e.preventDefault();
-        changeQuantity(this, -1);
-    });
-
-    $(document).on('click', '.plus_cart', function (e) {
-        e.preventDefault();
-        changeQuantity(this, 1);
-    });
-
-    $('#button-promo').on('click', applyPromoCode);
-
-    $('#promo-code').on('paste', e => {
-        if (promoCodeApplied) e.preventDefault();
-    }).on('keydown', e => {
-        if (e.keyCode === 13) e.preventDefault();
-    });
+  // Initialize price on load
+  updatePriceDisplay();
 });
 
 
