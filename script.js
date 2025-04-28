@@ -1,64 +1,98 @@
-// Код для карточки товару
-document.addEventListener('DOMContentLoaded', function () {
-    var checkboxes = document.querySelectorAll('input[type="checkbox"][price_add]');
-    var priceElement = document.querySelector('.price');
-    var quantityInputCard = document.getElementById('quantity_card');
-
-    // Отримання початкової ціни із атрибуту price, заміна коми на крапку
-    var initialPrice = parseFloat(priceElement.getAttribute('price').replace(',', '.')) || 0;
-
-    checkboxes.forEach(function (checkbox) {
-        checkbox.addEventListener('change', function () {
+// Optimized product card code
+document.addEventListener('DOMContentLoaded', function() {
+    // Cache DOM elements
+    const priceElement = document.querySelector('.price');
+    const quantityInputCard = document.getElementById('quantity_card');
+    const plusBtn = document.querySelector('.plus');
+    const minusBtn = document.querySelector('.minus');
+    const checkboxes = document.querySelectorAll('input[type="checkbox"][price_add]');
+    
+    // Initialize variables
+    const initialPrice = parseFloat(priceElement.getAttribute('price').replace(',', '.')) || 0;
+    let isWeightBased = priceElement.hasAttribute('weight-based');
+    let weightStep = parseInt(priceElement.getAttribute('weight-step') || 100);
+    let referenceWeight = parseInt(priceElement.getAttribute('reference-weight') || 100);
+    
+    // Initialize quantity input
+    quantityInputCard.value = 1;
+    
+    // Event listeners using event delegation where possible
+    function setupEventListeners() {
+        // Checkbox change events
+        checkboxes.forEach(checkbox => checkbox.addEventListener('change', updatePrice));
+        
+        // Quantity input events
+        quantityInputCard.addEventListener('input', function() {
+            if (isWeightBased) {
+                // For weight-based items, enforce step constraints
+                const value = parseInt(this.value) || 0;
+                const adjustedValue = Math.max(weightStep, Math.round(value / weightStep) * weightStep);
+                this.value = adjustedValue;
+            } else {
+                // For unit-based items, enforce minimum of 1
+                this.value = Math.max(1, parseInt(this.value) || 1);
+            }
             updatePrice();
         });
-    });
-
-    quantityInputCard.addEventListener('input', function () {
-        updatePrice();
-    });
-
-    $('.plus').click(function () {
-        if (quantityInputCard.value < 100) {
-            quantityInputCard.value = +quantityInputCard.value + 1;
+        
+        // Plus/minus button events
+        plusBtn.addEventListener('click', function() {
+            if (isWeightBased) {
+                quantityInputCard.value = parseInt(quantityInputCard.value || 0) + weightStep;
+            } else {
+                if (parseInt(quantityInputCard.value) < 100) {
+                    quantityInputCard.value = parseInt(quantityInputCard.value || 0) + 1;
+                }
+            }
             updatePrice();
-        }
-    });
-
-    $('.minus').click(function () {
-        if (quantityInputCard.value > 1) {
-            quantityInputCard.value = +quantityInputCard.value - 1;
+        });
+        
+        minusBtn.addEventListener('click', function() {
+            if (isWeightBased) {
+                const newValue = parseInt(quantityInputCard.value || 0) - weightStep;
+                quantityInputCard.value = Math.max(weightStep, newValue);
+            } else {
+                if (parseInt(quantityInputCard.value) > 1) {
+                    quantityInputCard.value = parseInt(quantityInputCard.value) - 1;
+                }
+            }
             updatePrice();
-        }
-    });
-
-    // Встановлення початкового значення 1
-    $('input[type="number"]').val(1);
-
-    // Заборона встановлення значення менше 1
-    $('input[type="number"]').on('input', function () {
-        if ($(this).val() < 1) {
-            $(this).val(1);
-        }
-    });
-
-    // Оновлення значення в 'value' при введенні
-    $('input[type="number"]').on('input', function () {
-        updatePrice(); // Оновлення ціни при введенні значення
-    });
-
+        });
+    }
+    
+    // Calculate and update the price
     function updatePrice() {
-        var totalPrice = initialPrice;
-
-        checkboxes.forEach(function (checkbox) {
+        let totalPrice = initialPrice;
+        
+        // Add checkbox prices if checked
+        checkboxes.forEach(function(checkbox) {
             if (checkbox.checked) {
-                var priceAdd = parseFloat(checkbox.getAttribute('price_add')) || 0;
-                totalPrice += priceAdd;
+                totalPrice += parseFloat(checkbox.getAttribute('price_add')) || 0;
             }
         });
-        // Оновлення вмісту елемента з ціною та атрибуту price
-        priceElement.textContent = (totalPrice * quantityInputCard.value).toFixed(2) + ' ₴';
+        
+        // Calculate final price based on quantity
+        let quantity = parseInt(quantityInputCard.value) || 1;
+        let finalPrice;
+        
+        if (isWeightBased) {
+            // For weight-based items, calculate price based on reference weight
+            finalPrice = (totalPrice * quantity / referenceWeight).toFixed(2);
+        } else {
+            // For unit-based items
+            finalPrice = (totalPrice * quantity).toFixed(2);
+        }
+        
+        // Update price display
+        priceElement.textContent = finalPrice + ' ₴';
+        
+        // Store base price for reference (excluding quantity)
         priceElement.setAttribute('price', totalPrice.toFixed(2));
     }
+    
+    // Initialize
+    setupEventListeners();
+    updatePrice();
 });
 
 
