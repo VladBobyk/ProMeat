@@ -1,64 +1,97 @@
-// Код для карточки товару
-document.addEventListener('DOMContentLoaded', function () {
-    var checkboxes = document.querySelectorAll('input[type="checkbox"][price_add]');
-    var priceElement = document.querySelector('.price');
-    var quantityInputCard = document.getElementById('quantity_card');
-
-    // Отримання початкової ціни із атрибуту price, заміна коми на крапку
-    var initialPrice = parseFloat(priceElement.getAttribute('price').replace(',', '.')) || 0;
-
-    checkboxes.forEach(function (checkbox) {
-        checkbox.addEventListener('change', function () {
-            updatePrice();
-        });
-    });
-
-    quantityInputCard.addEventListener('input', function () {
-        updatePrice();
-    });
-
-    $('.plus').click(function () {
-        if (quantityInputCard.value < 100) {
-            quantityInputCard.value = +quantityInputCard.value + 1;
-            updatePrice();
-        }
-    });
-
-    $('.minus').click(function () {
-        if (quantityInputCard.value > 1) {
-            quantityInputCard.value = +quantityInputCard.value - 1;
-            updatePrice();
-        }
-    });
-
-    // Встановлення початкового значення 1
-    $('input[type="number"]').val(1);
-
-    // Заборона встановлення значення менше 1
-    $('input[type="number"]').on('input', function () {
-        if ($(this).val() < 1) {
-            $(this).val(1);
-        }
-    });
-
-    // Оновлення значення в 'value' при введенні
-    $('input[type="number"]').on('input', function () {
-        updatePrice(); // Оновлення ціни при введенні значення
-    });
-
+// Product Card JS - Optimized
+document.addEventListener('DOMContentLoaded', function() {
+    // Cache DOM elements
+    const priceElement = document.querySelector('.price');
+    const quantityInputCard = document.getElementById('quantity_card');
+    const plusButton = document.querySelector('.plus');
+    const minusButton = document.querySelector('.minus');
+    const checkboxes = document.querySelectorAll('input[type="checkbox"][price_add]');
+    
+    // Guard clause if essential elements are missing
+    if (!priceElement || !quantityInputCard) {
+        console.error('Required elements not found on page');
+        return;
+    }
+    
+    // Parse initial price, with better error handling
+    const initialPrice = parseFloat(priceElement.getAttribute('price')?.replace(',', '.')) || 0;
+    
+    // Set initial value and enforce minimum
+    quantityInputCard.value = Math.max(1, parseInt(quantityInputCard.value) || 1);
+    
+    /**
+     * Updates the displayed price based on quantity and selected options
+     */
     function updatePrice() {
-        var totalPrice = initialPrice;
-
-        checkboxes.forEach(function (checkbox) {
+        let totalPrice = initialPrice;
+        
+        // Add prices from checked options
+        checkboxes.forEach(checkbox => {
             if (checkbox.checked) {
-                var priceAdd = parseFloat(checkbox.getAttribute('price_add')) || 0;
-                totalPrice += priceAdd;
+                const additionalPrice = parseFloat(checkbox.getAttribute('price_add')) || 0;
+                totalPrice += additionalPrice;
             }
         });
-        // Оновлення вмісту елемента з ціною та атрибуту price
-        priceElement.textContent = (totalPrice * quantityInputCard.value).toFixed(2) + ' ₴';
+        
+        // Get current quantity (with validation)
+        const quantity = Math.max(1, parseInt(quantityInputCard.value) || 1);
+        
+        // Update price display
+        const finalPrice = (totalPrice * quantity).toFixed(2);
+        priceElement.textContent = `${finalPrice} ₴`;
         priceElement.setAttribute('price', totalPrice.toFixed(2));
+        
+        // Trigger custom event for other components that might need to know
+        priceElement.dispatchEvent(new CustomEvent('priceUpdated', { 
+            detail: { basePrice: totalPrice, quantity: quantity, finalPrice: finalPrice } 
+        }));
     }
+    
+    // Event Listeners - using more efficient methods
+    
+    // Checkbox change events
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updatePrice);
+    });
+    
+    // Quantity input events
+    quantityInputCard.addEventListener('input', function() {
+        // Ensure value is at least 1
+        if (this.value < 1 || !this.value) {
+            this.value = 1;
+        }
+        
+        // Ensure value doesn't exceed 100
+        if (this.value > 100) {
+            this.value = 100;
+        }
+        
+        updatePrice();
+    });
+    
+    // Plus/minus buttons
+    if (plusButton) {
+        plusButton.addEventListener('click', function() {
+            const currentVal = parseInt(quantityInputCard.value) || 0;
+            if (currentVal < 100) {
+                quantityInputCard.value = currentVal + 1;
+                updatePrice();
+            }
+        });
+    }
+    
+    if (minusButton) {
+        minusButton.addEventListener('click', function() {
+            const currentVal = parseInt(quantityInputCard.value) || 2;
+            if (currentVal > 1) {
+                quantityInputCard.value = currentVal - 1;
+                updatePrice();
+            }
+        });
+    }
+    
+    // Initialize price display
+    updatePrice();
 });
 
 
