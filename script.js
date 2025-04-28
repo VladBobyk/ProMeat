@@ -1,181 +1,107 @@
-// Product Card JS - Complete Solution for Webflow (Without Reference Price)
-document.addEventListener('DOMContentLoaded', function() {
-    // Cache DOM elements
+document.addEventListener('DOMContentLoaded', () => {
     const priceElement = document.querySelector('.price');
     const quantityInput = document.getElementById('quantity_card');
     const plusButton = document.querySelector('.plus');
     const minusButton = document.querySelector('.minus');
     const checkboxes = document.querySelectorAll('input[type="checkbox"][price_add]');
-    
-    // Guard clause if essential elements are missing
-    if (!priceElement || !quantityInput) {
-        console.error('Required elements not found on page');
-        return;
-    }
-    
-    // Determine if this is a weight-based product
+
+    if (!priceElement || !quantityInput) return console.error('Required elements not found');
+
     const isWeightBased = priceElement.hasAttribute('weight-based');
-    const weightStep = parseInt(priceElement.getAttribute('weight-step')) || 100; // Default step: 100g
-    const minWeight = parseInt(priceElement.getAttribute('min-weight')) || weightStep; // Default min: same as step
-    const referenceWeight = parseInt(priceElement.getAttribute('reference-weight')) || 100; // Default reference: 100g
-    
-    // Parse initial price with better error handling (price per reference weight unit)
+    const weightStep = +priceElement.getAttribute('weight-step') || 100;
+    const minWeight = +priceElement.getAttribute('min-weight') || weightStep;
+    const referenceWeight = +priceElement.getAttribute('reference-weight') || 100;
     const initialPrice = parseFloat(priceElement.getAttribute('price')?.replace(',', '.')) || 0;
-    
-    // Create unit label if it doesn't exist
-    let unitLabelElement = document.querySelector('.unit-label');
-    if (!unitLabelElement) {
-        unitLabelElement = document.createElement('span');
-        unitLabelElement.className = 'unit-label';
-        quantityInput.parentNode.insertBefore(unitLabelElement, quantityInput.nextSibling);
+
+    let unitLabel = document.querySelector('.unit-label');
+    if (!unitLabel) {
+        unitLabel = document.createElement('span');
+        unitLabel.className = 'unit-label';
+        quantityInput.parentNode.insertBefore(unitLabel, quantityInput.nextSibling);
     }
-    
-    // Set unit label (pieces or grams)
-    const unitLabel = isWeightBased ? 'г' : 'шт';
-    if (unitLabelElement) {
-        unitLabelElement.textContent = unitLabel;
+    unitLabel.textContent = isWeightBased ? 'г' : 'шт';
+
+    quantityInput.value = isWeightBased 
+        ? Math.max(minWeight, alignToStep(quantityInput.value || minWeight))
+        : Math.max(1, +quantityInput.value || 1);
+
+    quantityInput.step = isWeightBased ? weightStep : 1;
+    quantityInput.min = isWeightBased ? minWeight : 1;
+
+    function alignToStep(value) {
+        return Math.round(+value / weightStep) * weightStep;
     }
-    
-    // Set initial value and enforce minimum
-    if (isWeightBased) {
-        // For weight-based products, set appropriate attributes and initial value
-        quantityInput.value = Math.max(minWeight, Math.round(parseInt(quantityInput.value || minWeight) / weightStep) * weightStep);
-        quantityInput.setAttribute('step', weightStep);
-        quantityInput.setAttribute('min', minWeight);
-    } else {
-        // For quantity-based products
-        quantityInput.value = Math.max(1, parseInt(quantityInput.value) || 1);
-        quantityInput.setAttribute('step', 1);
-        quantityInput.setAttribute('min', 1);
+
+    function getBasePrice() {
+        return Array.from(checkboxes).reduce((sum, checkbox) => 
+            sum + (checkbox.checked ? parseFloat(checkbox.getAttribute('price_add')?.replace(',', '.')) || 0 : 0), 
+            initialPrice
+        );
     }
-    
-    /**
-     * Updates the displayed price based on quantity/weight and selected options
-     */
+
     function updatePrice() {
-        let basePricePerUnit = initialPrice;
-        
-        // Add prices from checked options
-        checkboxes.forEach(checkbox => {
-            if (checkbox.checked) {
-                const additionalPrice = parseFloat(checkbox.getAttribute('price_add')) || 0;
-                basePricePerUnit += additionalPrice;
-            }
-        });
-        
-        // Calculate final price
-        let finalPrice;
+        const basePrice = getBasePrice();
+        let quantity = isWeightBased ? Math.max(minWeight, +quantityInput.value || minWeight) : Math.max(1, +quantityInput.value || 1);
+
         if (isWeightBased) {
-            // For weight-based: (price per reference weight) * (selected weight / reference weight)
-            const weight = Math.max(minWeight, parseInt(quantityInput.value) || minWeight);
-            finalPrice = (basePricePerUnit * (weight / referenceWeight)).toFixed(2);
-            
-            // Make sure weight is properly aligned with step
-            const alignedWeight = Math.round(weight / weightStep) * weightStep;
-            if (alignedWeight !== weight) {
-                quantityInput.value = alignedWeight;
-            }
+            quantity = alignToStep(quantity);
+            quantityInput.value = quantity;
         } else {
-            // For quantity-based: price * quantity
-            const quantity = Math.max(1, parseInt(quantityInput.value) || 1);
-            finalPrice = (basePricePerUnit * quantity).toFixed(2);
+            quantity = Math.min(quantity, 100);
+            quantityInput.value = quantity;
         }
-        
-        // Update price display
+
+        const finalPrice = isWeightBased 
+            ? (basePrice * (quantity / referenceWeight)).toFixed(2)
+            : (basePrice * quantity).toFixed(2);
+
         priceElement.textContent = `${finalPrice} ₴`;
-        
-        // Store current base price for future calculations
-        priceElement.setAttribute('current-base-price', basePricePerUnit.toFixed(2));
-        
-        // Trigger custom event for other components that might need to know
+        priceElement.setAttribute('current-base-price', basePrice.toFixed(2));
+
         priceElement.dispatchEvent(new CustomEvent('priceUpdated', { 
             detail: { 
-                basePrice: basePricePerUnit, 
-                isWeightBased: isWeightBased,
-                quantity: isWeightBased ? null : parseInt(quantityInput.value),
-                weight: isWeightBased ? parseInt(quantityInput.value) : null,
-                finalPrice: parseFloat(finalPrice)
-            } 
+                basePrice, 
+                isWeightBased,
+                quantity: isWeightBased ? null : quantity,
+                weight: isWeightBased ? quantity : null,
+                finalPrice: +finalPrice
+            }
         }));
     }
-    
-    // Event Listeners
-    
-    // Checkbox change events
-    checkboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', updatePrice);
-    });
-    
-    // Quantity/Weight input events
-    quantityInput.addEventListener('input', function() {
+
+    checkboxes.forEach(cb => cb.addEventListener('change', updatePrice));
+
+    quantityInput.addEventListener('input', () => {
+        let value = +quantityInput.value || 0;
         if (isWeightBased) {
-            // For weight-based products
-            let currentVal = parseInt(this.value) || 0;
-            
-            // Enforce minimum weight
-            if (currentVal < minWeight) {
-                currentVal = minWeight;
-                this.value = minWeight;
-            }
-            
-            // Align to weight step
-            const remainder = currentVal % weightStep;
-            if (remainder !== 0) {
-                // Round to nearest step
-                currentVal = Math.round(currentVal / weightStep) * weightStep;
-                this.value = currentVal;
-            }
+            if (value < minWeight) value = minWeight;
+            value = alignToStep(value);
         } else {
-            // For quantity-based products
-            if (this.value < 1 || !this.value) {
-                this.value = 1;
-            }
-            
-            if (this.value > 100) {
-                this.value = 100;
-            }
+            if (value < 1) value = 1;
+            if (value > 100) value = 100;
         }
-        
+        quantityInput.value = value;
         updatePrice();
     });
-    
-    // Plus button
-    if (plusButton) {
-        plusButton.addEventListener('click', function(e) {
-            e.preventDefault(); // Prevent default behavior
-            const currentVal = parseInt(quantityInput.value) || 0;
-            
-            if (isWeightBased) {
-                quantityInput.value = currentVal + weightStep;
-            } else if (currentVal < 100) {
-                quantityInput.value = currentVal + 1;
-            }
-            
-            updatePrice();
-        });
-    }
-    
-    // Minus button
-    if (minusButton) {
-        minusButton.addEventListener('click', function(e) {
-            e.preventDefault(); // Prevent default behavior
-            const currentVal = parseInt(quantityInput.value) || 0;
-            
-            if (isWeightBased) {
-                if (currentVal > minWeight) {
-                    quantityInput.value = currentVal - weightStep;
-                }
-            } else if (currentVal > 1) {
-                quantityInput.value = currentVal - 1;
-            }
-            
-            updatePrice();
-        });
-    }
-    
-    // Initialize price display
+
+    plusButton?.addEventListener('click', e => {
+        e.preventDefault();
+        let val = +quantityInput.value || 0;
+        quantityInput.value = isWeightBased ? val + weightStep : Math.min(val + 1, 100);
+        updatePrice();
+    });
+
+    minusButton?.addEventListener('click', e => {
+        e.preventDefault();
+        let val = +quantityInput.value || 0;
+        if (isWeightBased && val > minWeight) quantityInput.value = val - weightStep;
+        else if (!isWeightBased && val > 1) quantityInput.value = val - 1;
+        updatePrice();
+    });
+
     updatePrice();
 });
+
 
 
 
