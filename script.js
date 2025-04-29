@@ -1,64 +1,180 @@
-// Код для карточки товару
-document.addEventListener('DOMContentLoaded', function () {
-    var checkboxes = document.querySelectorAll('input[type="checkbox"][price_add]');
-    var priceElement = document.querySelector('.price');
-    var quantityInputCard = document.getElementById('quantity_card');
-
-    // Отримання початкової ціни із атрибуту price, заміна коми на крапку
-    var initialPrice = parseFloat(priceElement.getAttribute('price').replace(',', '.')) || 0;
-
-    checkboxes.forEach(function (checkbox) {
-        checkbox.addEventListener('change', function () {
-            updatePrice();
-        });
-    });
-
-    quantityInputCard.addEventListener('input', function () {
-        updatePrice();
-    });
-
-    $('.plus').click(function () {
-        if (quantityInputCard.value < 100) {
-            quantityInputCard.value = +quantityInputCard.value + 1;
-            updatePrice();
-        }
-    });
-
-    $('.minus').click(function () {
-        if (quantityInputCard.value > 1) {
-            quantityInputCard.value = +quantityInputCard.value - 1;
-            updatePrice();
-        }
-    });
-
-    // Встановлення початкового значення 1
-    $('input[type="number"]').val(1);
-
-    // Заборона встановлення значення менше 1
-    $('input[type="number"]').on('input', function () {
-        if ($(this).val() < 1) {
-            $(this).val(1);
-        }
-    });
-
-    // Оновлення значення в 'value' при введенні
-    $('input[type="number"]').on('input', function () {
-        updatePrice(); // Оновлення ціни при введенні значення
-    });
-
+// Product Card JS - Complete Solution for Webflow (Without Reference Price)
+document.addEventListener('DOMContentLoaded', function() {
+    // Cache DOM elements
+    const priceElement = document.querySelector('.price');
+    const quantityInput = document.getElementById('quantity_card');
+    const plusButton = document.querySelector('.plus');
+    const minusButton = document.querySelector('.minus');
+    const checkboxes = document.querySelectorAll('input[type="checkbox"][price_add]');
+    
+    // Guard clause if essential elements are missing
+    if (!priceElement || !quantityInput) {
+        console.error('Required elements not found on page');
+        return;
+    }
+    
+    // Determine if this is a weight-based product
+    const isWeightBased = priceElement.hasAttribute('weight-based');
+    const weightStep = parseInt(priceElement.getAttribute('weight-step')) || 100; // Default step: 100g
+    const minWeight = parseInt(priceElement.getAttribute('min-weight')) || weightStep; // Default min: same as step
+    const referenceWeight = parseInt(priceElement.getAttribute('reference-weight')) || 100; // Default reference: 100g
+    
+    // Parse initial price with better error handling (price per reference weight unit)
+    const initialPrice = parseFloat(priceElement.getAttribute('price')?.replace(',', '.')) || 0;
+    
+    // Create unit label if it doesn't exist
+    let unitLabelElement = document.querySelector('.unit-label');
+    if (!unitLabelElement) {
+        unitLabelElement = document.createElement('span');
+        unitLabelElement.className = 'unit-label';
+        quantityInput.parentNode.insertBefore(unitLabelElement, quantityInput.nextSibling);
+    }
+    
+    // Set unit label (pieces or grams)
+    const unitLabel = isWeightBased ? 'г' : 'шт';
+    if (unitLabelElement) {
+        unitLabelElement.textContent = unitLabel;
+    }
+    
+    // Set initial value and enforce minimum
+    if (isWeightBased) {
+        // For weight-based products, set appropriate attributes and initial value
+        quantityInput.value = Math.max(minWeight, Math.round(parseInt(quantityInput.value || minWeight) / weightStep) * weightStep);
+        quantityInput.setAttribute('step', weightStep);
+        quantityInput.setAttribute('min', minWeight);
+    } else {
+        // For quantity-based products
+        quantityInput.value = Math.max(1, parseInt(quantityInput.value) || 1);
+        quantityInput.setAttribute('step', 1);
+        quantityInput.setAttribute('min', 1);
+    }
+    
+    /**
+     * Updates the displayed price based on quantity/weight and selected options
+     */
     function updatePrice() {
-        var totalPrice = initialPrice;
-
-        checkboxes.forEach(function (checkbox) {
+        let basePricePerUnit = initialPrice;
+        
+        // Add prices from checked options
+        checkboxes.forEach(checkbox => {
             if (checkbox.checked) {
-                var priceAdd = parseFloat(checkbox.getAttribute('price_add')) || 0;
-                totalPrice += priceAdd;
+                const additionalPrice = parseFloat(checkbox.getAttribute('price_add')) || 0;
+                basePricePerUnit += additionalPrice;
             }
         });
-        // Оновлення вмісту елемента з ціною та атрибуту price
-        priceElement.textContent = (totalPrice * quantityInputCard.value).toFixed(2) + ' ₴';
-        priceElement.setAttribute('price', totalPrice.toFixed(2));
+        
+        // Calculate final price
+        let finalPrice;
+        if (isWeightBased) {
+            // For weight-based: (price per reference weight) * (selected weight / reference weight)
+            const weight = Math.max(minWeight, parseInt(quantityInput.value) || minWeight);
+            finalPrice = (basePricePerUnit * (weight / referenceWeight)).toFixed(2);
+            
+            // Make sure weight is properly aligned with step
+            const alignedWeight = Math.round(weight / weightStep) * weightStep;
+            if (alignedWeight !== weight) {
+                quantityInput.value = alignedWeight;
+            }
+        } else {
+            // For quantity-based: price * quantity
+            const quantity = Math.max(1, parseInt(quantityInput.value) || 1);
+            finalPrice = (basePricePerUnit * quantity).toFixed(2);
+        }
+        
+        // Update price display
+        priceElement.textContent = `${finalPrice} ₴`;
+        
+        // Store current base price for future calculations
+        priceElement.setAttribute('current-base-price', basePricePerUnit.toFixed(2));
+        
+        // Trigger custom event for other components that might need to know
+        priceElement.dispatchEvent(new CustomEvent('priceUpdated', { 
+            detail: { 
+                basePrice: basePricePerUnit, 
+                isWeightBased: isWeightBased,
+                quantity: isWeightBased ? null : parseInt(quantityInput.value),
+                weight: isWeightBased ? parseInt(quantityInput.value) : null,
+                finalPrice: parseFloat(finalPrice)
+            } 
+        }));
     }
+    
+    // Event Listeners
+    
+    // Checkbox change events
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updatePrice);
+    });
+    
+    // Quantity/Weight input events
+    quantityInput.addEventListener('input', function() {
+        if (isWeightBased) {
+            // For weight-based products
+            let currentVal = parseInt(this.value) || 0;
+            
+            // Enforce minimum weight
+            if (currentVal < minWeight) {
+                currentVal = minWeight;
+                this.value = minWeight;
+            }
+            
+            // Align to weight step
+            const remainder = currentVal % weightStep;
+            if (remainder !== 0) {
+                // Round to nearest step
+                currentVal = Math.round(currentVal / weightStep) * weightStep;
+                this.value = currentVal;
+            }
+        } else {
+            // For quantity-based products
+            if (this.value < 1 || !this.value) {
+                this.value = 1;
+            }
+            
+            if (this.value > 100) {
+                this.value = 100;
+            }
+        }
+        
+        updatePrice();
+    });
+    
+    // Plus button
+    if (plusButton) {
+        plusButton.addEventListener('click', function(e) {
+            e.preventDefault(); // Prevent default behavior
+            const currentVal = parseInt(quantityInput.value) || 0;
+            
+            if (isWeightBased) {
+                quantityInput.value = currentVal + weightStep;
+            } else if (currentVal < 100) {
+                quantityInput.value = currentVal + 1;
+            }
+            
+            updatePrice();
+        });
+    }
+    
+    // Minus button
+    if (minusButton) {
+        minusButton.addEventListener('click', function(e) {
+            e.preventDefault(); // Prevent default behavior
+            const currentVal = parseInt(quantityInput.value) || 0;
+            
+            if (isWeightBased) {
+                if (currentVal > minWeight) {
+                    quantityInput.value = currentVal - weightStep;
+                }
+            } else if (currentVal > 1) {
+                quantityInput.value = currentVal - 1;
+            }
+            
+            updatePrice();
+        });
+    }
+    
+    // Initialize price display
+    updatePrice();
 });
 
 
