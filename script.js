@@ -310,13 +310,53 @@ function formatPrice(price) {
 }
 
 function restoreCart(savedCartItems) {
-    cartItemsContainer.html(savedCartItems.map(item => item.html).join(''));
+    // Clear the container first
+    cartItemsContainer.empty();
     
-    // Після відновлення HTML, потрібно також оновити data-атрибути, які не зберігаються в HTML
-    savedCartItems.forEach((item, index) => {
-        var $cartItem = $(cartItemsContainer.children()[index]);
+    if (!savedCartItems || !savedCartItems.length) {
+        updateCartTotal();
+        updateCartNumber();
+        return;
+    }
+    
+    // Rebuild cart items from saved data
+    savedCartItems.forEach(item => {
+        // Get the latest quantity data for this item (might have been updated)
+        let itemId = item.itemId;
+        let latestItemData = null;
         
-        // Set the item ID to ensure it matches across pages
+        if (itemId) {
+            try {
+                const storedItemData = localStorage.getItem('cartItem_' + itemId);
+                if (storedItemData) {
+                    latestItemData = JSON.parse(storedItemData);
+                }
+            } catch (e) {
+                console.error("Error parsing stored item data:", e);
+            }
+        }
+        
+        // Use the most up-to-date quantity if available
+        const quantity = latestItemData ? latestItemData.quantity : (item.quantity || 1);
+        
+        // Create a temporary DOM element to parse the HTML
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = item.html;
+        const cartItemElement = tempDiv.firstChild;
+        
+        // Update the quantity input value before appending
+        const quantityInput = cartItemElement.querySelector('.quantity_cart');
+        if (quantityInput) {
+            quantityInput.value = quantity;
+        }
+        
+        // Append the element to the container
+        cartItemsContainer.append(cartItemElement);
+        
+        // Get reference to the newly added item
+        const $cartItem = $(cartItemsContainer.children().last());
+        
+        // Set/update all necessary data attributes
         if (item.itemId) {
             $cartItem.attr('data-item-id', item.itemId);
         }
@@ -325,24 +365,24 @@ function restoreCart(savedCartItems) {
             $cartItem.data('weight-based', true);
             $cartItem.data('reference-weight', item.referenceWeight);
             
-            // Відновлюємо додаткові атрибути для вагових товарів
+            // Update weight-related attributes
             if (item.weightStep) $cartItem.data('weight-step', item.weightStep);
             if (item.minWeight) $cartItem.data('min-weight', item.minWeight);
             
-            // Додаємо клас для стилізації
+            // Add styling class
             $cartItem.addClass('weight-based-item');
             
-            // Оновлюємо текст одиниць виміру
-            $cartItem.find('.quantity_cart').next('.unit-label').text('г');
+            // Ensure unit label is correct
+            const unitLabel = $cartItem.find('.quantity_cart').next('.unit-label');
+            if (unitLabel.length) {
+                unitLabel.text('г');
+            } else {
+                $('<span class="unit-label">г</span>').insertAfter($cartItem.find('.quantity_cart'));
+            }
         }
         
-        // Update quantity from stored value (in case HTML doesn't match stored value)
-        if (item.quantity) {
-            $cartItem.find('.quantity_cart').val(item.quantity);
-        }
-        
-        // Update price display in case it's out of sync
-        updateCartPrice($cartItem, item.quantity || 1);
+        // Update the price display based on latest quantity
+        updateCartPrice($cartItem, quantity);
     });
     
     updateCartTotal();
