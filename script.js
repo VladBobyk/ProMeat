@@ -187,6 +187,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 // Оптимізований код для кошика
+// Оптимізований код для кошика
 var cartItemsContainer;
 var savedCartItems;
 var originalTotalPrice = 0;
@@ -204,6 +205,9 @@ function saveCart() {
         var quantity = parseInt($item.find('.quantity_cart').val(), 10) || 1;
         var isWeightBased = $item.data('weight-based') === true;
         var referenceWeight = parseInt($item.data('reference-weight')) || 100;
+        var weightStep = parseInt($item.data('weight-step')) || 100;
+        var minWeight = parseInt($item.data('min-weight')) || weightStep;
+        var itemId = $item.data('item-id');
         var totalPrice;
 
         if (isWeightBased) {
@@ -221,15 +225,36 @@ function saveCart() {
             $item.find('.cart_price').text(`${totalPrice} ₴`);
         }
 
+        // Store cart item data separately for checkout page access
+        var itemData = {
+            id: itemId,
+            initialPricePerUnit: initialPricePerUnit,
+            quantity: quantity,
+            isWeightBased: isWeightBased,
+            referenceWeight: referenceWeight,
+            weightStep: weightStep,
+            minWeight: minWeight,
+            totalPrice: totalPrice
+        };
+        
+        // Store individual item data with its ID for checkout page
+        localStorage.setItem('cartItem_' + itemId, JSON.stringify(itemData));
+
         return {
             html: item.outerHTML,
             initialPricePerUnit: initialPricePerUnit,
             quantity: quantity,
             isWeightBased: isWeightBased,
-            referenceWeight: referenceWeight
+            referenceWeight: referenceWeight,
+            weightStep: weightStep,
+            minWeight: minWeight,
+            itemId: itemId
         };
     });
 
+    // Also store all item IDs to know which items are in cart
+    var itemIds = cartItems.map(item => item.itemId);
+    localStorage.setItem('cartItemIds', JSON.stringify(itemIds));
     localStorage.setItem('cartItems', JSON.stringify(cartItems));
     updateCartTotal();
     updateCartNumber();
@@ -290,6 +315,12 @@ function restoreCart(savedCartItems) {
     // Після відновлення HTML, потрібно також оновити data-атрибути, які не зберігаються в HTML
     savedCartItems.forEach((item, index) => {
         var $cartItem = $(cartItemsContainer.children()[index]);
+        
+        // Set the item ID to ensure it matches across pages
+        if (item.itemId) {
+            $cartItem.attr('data-item-id', item.itemId);
+        }
+        
         if (item.isWeightBased) {
             $cartItem.data('weight-based', true);
             $cartItem.data('reference-weight', item.referenceWeight);
@@ -304,6 +335,14 @@ function restoreCart(savedCartItems) {
             // Оновлюємо текст одиниць виміру
             $cartItem.find('.quantity_cart').next('.unit-label').text('г');
         }
+        
+        // Update quantity from stored value (in case HTML doesn't match stored value)
+        if (item.quantity) {
+            $cartItem.find('.quantity_cart').val(item.quantity);
+        }
+        
+        // Update price display in case it's out of sync
+        updateCartPrice($cartItem, item.quantity || 1);
     });
     
     updateCartTotal();
@@ -418,6 +457,10 @@ function updateCartPrice(cartItem, newQuantity) {
 function removeFromCart(button) {
     var itemId = $(button).closest('.cart-item').data('item-id');
     $(`[data-item-id="${itemId}"]`).remove();
+    
+    // Remove individual item data from localStorage
+    localStorage.removeItem('cartItem_' + itemId);
+    
     saveCart();
     updateCartTotal();
     updateCartNumber();
