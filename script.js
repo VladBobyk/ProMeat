@@ -658,7 +658,7 @@ function addSliderProductToCart(button) {
     var productImage = $sliderItem.find('.cart-img_slider').attr('src');
     var productName = $sliderItem.find('.product_title-slider_test').text().trim();
     var productPriceElement = $sliderItem.find('.price_slider');
-    var productPrice = parseFloat(productPriceElement.attr('price')) || 0;
+    var productPrice = parseFloat(productPriceElement.attr('price_slider')) || 0;
     
     // Check if product is weight-based
     var isWeightBased = productPriceElement.attr('weight-based') !== undefined;
