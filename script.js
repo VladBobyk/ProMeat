@@ -646,61 +646,46 @@ $(document).ready(function () {
 
 
 
-// Доповнення для кошика
-// COMPLETELY REPLACE YOUR SLIDER CART CODE WITH THIS CLEAN VERSION
+// === Слайдер: Додавання продуктів до кошика (виправлена версія) ===
 
-// Function to add slider products to cart - CLEAN VERSION (NO TEXT CHANGES)
 function addSliderProductToCart(button) {
     var $button = $(button);
     var $sliderItem = $button.closest('.cart-item_slider');
     
-    // Get product information from slider
+    // Інформація про продукт
     var productImage = $sliderItem.find('.cart-img_slider').attr('src');
     var productName = $sliderItem.find('.product_title-slider_test').text().trim();
     var productPriceElement = $sliderItem.find('.price_slider');
     var productPrice = parseFloat(productPriceElement.attr('price')) || 0;
     
-    // Check if product is weight-based
     var isWeightBased = productPriceElement.attr('weight-based') !== undefined;
     var weightStep = parseInt(productPriceElement.attr('weight-step')) || 100;
     var minWeight = parseInt(productPriceElement.attr('min-weight')) || weightStep;
     var referenceWeight = parseInt(productPriceElement.attr('reference-weight')) || 100;
     var packaging = productPriceElement.attr('packaging') || '0';
-    
-    // Default quantity is 1 for slider products (or minWeight for weight-based)
+
     var quantity = isWeightBased ? minWeight : 1;
     var unitLabel = isWeightBased ? 'г' : 'шт';
-    
-    // Generate unique item ID
+
     var itemId = 'slider_item_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-    
-    // Check if item already exists in cart by product name
+
+    // Перевірка на існуючий товар у кошику
     var existingItem = null;
     cartItemsContainer.find('.cart-item').each(function() {
         var existingName = $(this).find('.cart_product_title').text().trim();
         if (existingName === productName) {
             existingItem = $(this);
-            return false; // break the loop
+            return false;
         }
     });
-    
+
     if (existingItem && existingItem.length > 0) {
-        // If item exists, increase its quantity
         var existingQuantityInput = existingItem.find('.quantity_cart');
         var currentQuantity = parseInt(existingQuantityInput.val(), 10);
-        var newQuantity;
-        
-        if (isWeightBased) {
-            newQuantity = currentQuantity + weightStep;
-        } else {
-            newQuantity = currentQuantity + 1;
-        }
-        
+        var newQuantity = isWeightBased ? currentQuantity + weightStep : currentQuantity + 1;
         existingQuantityInput.val(newQuantity);
         updateCartPrice(existingItem, newQuantity);
-        
     } else {
-        // Create new cart item
         var cartItem = `
             <div class="cart-item ${isWeightBased ? 'weight-based-item' : ''}" 
                 data-item-id="${itemId}" 
@@ -716,7 +701,7 @@ function addSliderProductToCart(button) {
                             <a href="#" class="minus minus_cart w-inline-block">-</a>
                             <input type="number" class="quantity quantity_cart w-input" maxlength="256" name="Quantity" data-name="Quantity" 
                                 value="${quantity}" 
-                                required="" ${isWeightBased ? `min="${minWeight}" step="${weightStep}"` : 'min="1"'}>
+                                required ${isWeightBased ? `min="${minWeight}" step="${weightStep}"` : 'min="1"'}>
                             <span class="unit-label">${unitLabel}</span>
                             <a href="#" class="plus plus_cart w-inline-block">+</a>
                         </div>
@@ -729,68 +714,59 @@ function addSliderProductToCart(button) {
                 </div>
             </div>
         `;
-
         cartItemsContainer.append(cartItem);
     }
-    
-    // Save cart and update UI - NO TEXT CHANGES FOR SLIDER BUTTONS
+
     saveCart();
     updateCartNumber();
 }
 
-// UPDATED EVENT LISTENERS - COMPLETE ISOLATION
+// === Ініціалізація подій (оновлена та ізольована) ===
 $(document).ready(function () {
-    
-    // SLIDER BUTTONS - Completely separate handlers
+    // Видаляємо попередні обробники
+    $(document).off('click', '.add_card_slider');
+    $(document).off('click', '.add_card_slider_mobile');
+    $(document).off('click', '.add_card');
+
+    // Кнопки з слайдера
     $(document).on('click', '.add_card_slider', function (e) {
         e.preventDefault();
-        e.stopImmediatePropagation(); // Complete event isolation
+        e.stopImmediatePropagation();
         addSliderProductToCart(this);
         return false;
     });
-    
+
     $(document).on('click', '.add_card_slider_mobile', function (e) {
-        e.preventDefault(); 
-        e.stopImmediatePropagation(); // Complete event isolation
+        e.preventDefault();
+        e.stopImmediatePropagation();
         addSliderProductToCart(this);
         return false;
     });
-    
-    // MAIN PRODUCT BUTTON - Updated to exclude slider buttons
-    $('.add_card').on('click', function (e) {
-        // Only handle if it's NOT a slider button
-        if (!$(this).hasClass('add_card_slider') && !$(this).hasClass('add_card_slider_mobile')) {
-            e.preventDefault();
-            addToCart();
-        }
-    });
-    
-    // If you have delegated event for add_card, replace it with this:
-    $(document).off('click', '.add_card'); // Remove any existing delegated events
+
+    // Головні кнопки додавання (не зі слайдера)
     $(document).on('click', '.add_card', function (e) {
-        // Only handle if it's NOT a slider button
         if (!$(this).hasClass('add_card_slider') && !$(this).hasClass('add_card_slider_mobile')) {
             e.preventDefault();
-            addToCart();
+            e.stopImmediatePropagation();
+            addToCart(); // твоя основна функція
         }
     });
 });
 
-// IMPORTANT: Also make sure your main addToCart() function doesn't get called for slider items
-// Add this check at the beginning of your addToCart() function:
+// === Додай це у початок своєї функції addToCart() ===
 /*
 function addToCart() {
-    // Add this check at the very beginning of your existing addToCart function:
     if (event && event.target && (
         $(event.target).hasClass('add_card_slider') || 
         $(event.target).hasClass('add_card_slider_mobile')
     )) {
-        return; // Exit early if it's a slider button
+        return;
     }
-    
-    // ... rest of your existing addToCart code ...
+
+    // ...твій існуючий код
 }
 */
+
 
 
 
