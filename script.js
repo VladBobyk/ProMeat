@@ -648,6 +648,140 @@ $(document).ready(function () {
 
 
 
+// Доповнення для кошика
+// ADD THIS CODE TO YOUR EXISTING script.js FILE (DON'T REPLACE ANYTHING)
+// Slider Products Cart Functionality Extension
+
+// Function to add slider products to cart
+function addSliderProductToCart(button) {
+    var $button = $(button);
+    var $sliderItem = $button.closest('.cart-item_slider');
+    
+    // Get product information from slider
+    var productImage = $sliderItem.find('.cart-img_slider').attr('src');
+    var productName = $sliderItem.find('.product_title-slider_test').text().trim();
+    var productPriceElement = $sliderItem.find('.price_slider');
+    var productPrice = parseFloat(productPriceElement.attr('price')) || 0;
+    
+    // Check if product is weight-based (optional - you can add this attribute if needed)
+    var isWeightBased = productPriceElement.attr('weight-based') !== undefined;
+    var weightStep = parseInt(productPriceElement.attr('weight-step')) || 100;
+    var minWeight = parseInt(productPriceElement.attr('min-weight')) || weightStep;
+    var referenceWeight = parseInt(productPriceElement.attr('reference-weight')) || 100;
+    var packaging = productPriceElement.attr('packaging') || '0';
+    
+    // Default quantity is 1 for slider products (or minWeight for weight-based)
+    var quantity = isWeightBased ? minWeight : 1;
+    var unitLabel = isWeightBased ? 'г' : 'шт';
+    
+    // Generate unique item ID
+    var itemId = 'slider_item_' + Date.now();
+    
+    // Check if item already exists in cart by product name
+    var existingItem = null;
+    cartItemsContainer.find('.cart-item').each(function() {
+        var existingName = $(this).find('.cart_product_title').text().trim();
+        if (existingName === productName) {
+            existingItem = $(this);
+            return false; // break the loop
+        }
+    });
+    
+    if (existingItem && existingItem.length > 0) {
+        // If item exists, increase its quantity
+        var existingQuantityInput = existingItem.find('.quantity_cart');
+        var currentQuantity = parseInt(existingQuantityInput.val(), 10);
+        var newQuantity;
+        
+        if (isWeightBased) {
+            newQuantity = currentQuantity + weightStep;
+        } else {
+            newQuantity = currentQuantity + 1;
+        }
+        
+        existingQuantityInput.val(newQuantity);
+        updateCartPrice(existingItem, newQuantity);
+        
+    } else {
+        // Create new cart item using the same structure as your existing addToCart function
+        var cartItem = `
+            <div class="cart-item ${isWeightBased ? 'weight-based-item' : ''}" 
+                data-item-id="${itemId}" 
+                data-initial-price="${productPrice}" 
+                data-packaging="${packaging}"
+                ${isWeightBased ? `data-weight-based="true" data-reference-weight="${referenceWeight}" data-weight-step="${weightStep}" data-min-weight="${minWeight}"` : ''}>
+                <div class="cart-items_left">
+                    <img class="burger-image" src="${productImage}" alt="${productName}">
+                    <div class="cart_info">
+                        <h4 class="cart_product_title" packaging="${packaging}">${productName}</h4>
+                        <p class="ingredients-list cart_ingredients">Додатковий товар</p>
+                        <div class="product_quantity product_quantity_cart">
+                            <a href="#" class="minus minus_cart w-inline-block" id="minus_cart">-</a>
+                            <input type="number" class="quantity quantity_cart w-input" maxlength="256" name="Quantity" data-name="Quantity" placeholder="" id="Quantity" 
+                                value="${quantity}" 
+                                required="" ${isWeightBased ? `min="${minWeight}" step="${weightStep}"` : 'min="1"'}>
+                            <span class="unit-label">${unitLabel}</span>
+                            <a href="#" class="plus plus_cart w-inline-block" id="plus_cart">+</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="cart-items_right">
+                    <p class="cart_price">${calculateItemPrice(productPrice, quantity, isWeightBased, referenceWeight)}</p>
+                    <button class="remove-from-cart">Видалити</button>
+                    <div class="burger-details"></div>
+                </div>
+            </div>
+        `;
+
+        cartItemsContainer.append(cartItem);
+    }
+    
+    // Use your existing saveCart function
+    saveCart();
+    updateCartNumber();
+    
+    // Show feedback
+    if ($button.hasClass('add_card_slider_mobile')) {
+        $button.text('Додано в кошик');
+        setTimeout(function() {
+            $button.text('Додати в кошик');
+        }, 5000);
+    } else {
+        var originalText = $button.text();
+        $button.text('Додано');
+        setTimeout(function() {
+            $button.text(originalText);
+        }, 5000);
+    }
+}
+
+// ADD EVENT LISTENERS FOR SLIDER BUTTONS
+// Add this inside your existing $(document).ready function:
+
+$(document).ready(function () {
+    // Add event listeners for slider add to cart buttons
+    $(document).on('click', '.add_card_slider', function (e) {
+        e.preventDefault();
+        addSliderProductToCart(this);
+    });
+    
+    // Add event listeners for mobile slider add to cart buttons  
+    $(document).on('click', '.add_card_slider_mobile', function (e) {
+        e.preventDefault();
+        addSliderProductToCart(this);
+    });
+});
+
+
+
+
+
+
+
+
+
+
+
 // Код для адреси
     document.addEventListener('DOMContentLoaded', function () {
         var deliveryForm = document.getElementById('wf-form-delivery');
