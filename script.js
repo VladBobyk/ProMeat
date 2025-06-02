@@ -646,7 +646,151 @@ $(document).ready(function () {
 
 
 
+// Доповнення для кошика
+// COMPLETELY REPLACE YOUR SLIDER CART CODE WITH THIS CLEAN VERSION
 
+// Function to add slider products to cart - CLEAN VERSION (NO TEXT CHANGES)
+function addSliderProductToCart(button) {
+    var $button = $(button);
+    var $sliderItem = $button.closest('.cart-item_slider');
+    
+    // Get product information from slider
+    var productImage = $sliderItem.find('.cart-img_slider').attr('src');
+    var productName = $sliderItem.find('.product_title-slider_test').text().trim();
+    var productPriceElement = $sliderItem.find('.price_slider');
+    var productPrice = parseFloat(productPriceElement.attr('price')) || 0;
+    
+    // Check if product is weight-based
+    var isWeightBased = productPriceElement.attr('weight-based') !== undefined;
+    var weightStep = parseInt(productPriceElement.attr('weight-step')) || 100;
+    var minWeight = parseInt(productPriceElement.attr('min-weight')) || weightStep;
+    var referenceWeight = parseInt(productPriceElement.attr('reference-weight')) || 100;
+    var packaging = productPriceElement.attr('packaging') || '0';
+    
+    // Default quantity is 1 for slider products (or minWeight for weight-based)
+    var quantity = isWeightBased ? minWeight : 1;
+    var unitLabel = isWeightBased ? 'г' : 'шт';
+    
+    // Generate unique item ID
+    var itemId = 'slider_item_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    
+    // Check if item already exists in cart by product name
+    var existingItem = null;
+    cartItemsContainer.find('.cart-item').each(function() {
+        var existingName = $(this).find('.cart_product_title').text().trim();
+        if (existingName === productName) {
+            existingItem = $(this);
+            return false; // break the loop
+        }
+    });
+    
+    if (existingItem && existingItem.length > 0) {
+        // If item exists, increase its quantity
+        var existingQuantityInput = existingItem.find('.quantity_cart');
+        var currentQuantity = parseInt(existingQuantityInput.val(), 10);
+        var newQuantity;
+        
+        if (isWeightBased) {
+            newQuantity = currentQuantity + weightStep;
+        } else {
+            newQuantity = currentQuantity + 1;
+        }
+        
+        existingQuantityInput.val(newQuantity);
+        updateCartPrice(existingItem, newQuantity);
+        
+    } else {
+        // Create new cart item
+        var cartItem = `
+            <div class="cart-item ${isWeightBased ? 'weight-based-item' : ''}" 
+                data-item-id="${itemId}" 
+                data-initial-price="${productPrice}" 
+                data-packaging="${packaging}"
+                ${isWeightBased ? `data-weight-based="true" data-reference-weight="${referenceWeight}" data-weight-step="${weightStep}" data-min-weight="${minWeight}"` : ''}>
+                <div class="cart-items_left">
+                    <img class="burger-image" src="${productImage}" alt="${productName}">
+                    <div class="cart_info">
+                        <h4 class="cart_product_title" packaging="${packaging}">${productName}</h4>
+                        <p class="ingredients-list cart_ingredients">Додатковий товар</p>
+                        <div class="product_quantity product_quantity_cart">
+                            <a href="#" class="minus minus_cart w-inline-block">-</a>
+                            <input type="number" class="quantity quantity_cart w-input" maxlength="256" name="Quantity" data-name="Quantity" 
+                                value="${quantity}" 
+                                required="" ${isWeightBased ? `min="${minWeight}" step="${weightStep}"` : 'min="1"'}>
+                            <span class="unit-label">${unitLabel}</span>
+                            <a href="#" class="plus plus_cart w-inline-block">+</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="cart-items_right">
+                    <p class="cart_price">${calculateItemPrice(productPrice, quantity, isWeightBased, referenceWeight)}</p>
+                    <button class="remove-from-cart">Видалити</button>
+                    <div class="burger-details"></div>
+                </div>
+            </div>
+        `;
+
+        cartItemsContainer.append(cartItem);
+    }
+    
+    // Save cart and update UI - NO TEXT CHANGES FOR SLIDER BUTTONS
+    saveCart();
+    updateCartNumber();
+}
+
+// UPDATED EVENT LISTENERS - COMPLETE ISOLATION
+$(document).ready(function () {
+    
+    // SLIDER BUTTONS - Completely separate handlers
+    $(document).on('click', '.add_card_slider', function (e) {
+        e.preventDefault();
+        e.stopImmediatePropagation(); // Complete event isolation
+        addSliderProductToCart(this);
+        return false;
+    });
+    
+    $(document).on('click', '.add_card_slider_mobile', function (e) {
+        e.preventDefault(); 
+        e.stopImmediatePropagation(); // Complete event isolation
+        addSliderProductToCart(this);
+        return false;
+    });
+    
+    // MAIN PRODUCT BUTTON - Updated to exclude slider buttons
+    $('.add_card').on('click', function (e) {
+        // Only handle if it's NOT a slider button
+        if (!$(this).hasClass('add_card_slider') && !$(this).hasClass('add_card_slider_mobile')) {
+            e.preventDefault();
+            addToCart();
+        }
+    });
+    
+    // If you have delegated event for add_card, replace it with this:
+    $(document).off('click', '.add_card'); // Remove any existing delegated events
+    $(document).on('click', '.add_card', function (e) {
+        // Only handle if it's NOT a slider button
+        if (!$(this).hasClass('add_card_slider') && !$(this).hasClass('add_card_slider_mobile')) {
+            e.preventDefault();
+            addToCart();
+        }
+    });
+});
+
+// IMPORTANT: Also make sure your main addToCart() function doesn't get called for slider items
+// Add this check at the beginning of your addToCart() function:
+/*
+function addToCart() {
+    // Add this check at the very beginning of your existing addToCart function:
+    if (event && event.target && (
+        $(event.target).hasClass('add_card_slider') || 
+        $(event.target).hasClass('add_card_slider_mobile')
+    )) {
+        return; // Exit early if it's a slider button
+    }
+    
+    // ... rest of your existing addToCart code ...
+}
+*/
 
 
 
