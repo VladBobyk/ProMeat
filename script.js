@@ -649,10 +649,9 @@ $(document).ready(function () {
 
 
 // Доповнення для кошика
-// ADD THIS CODE TO YOUR EXISTING script.js FILE (DON'T REPLACE ANYTHING)
-// Slider Products Cart Functionality Extension
+// REPLACE YOUR EXISTING SLIDER CART CODE WITH THIS FIXED VERSION
 
-// Function to add slider products to cart
+// Function to add slider products to cart - FIXED VERSION
 function addSliderProductToCart(button) {
     var $button = $(button);
     var $sliderItem = $button.closest('.cart-item_slider');
@@ -675,7 +674,7 @@ function addSliderProductToCart(button) {
     var unitLabel = isWeightBased ? 'г' : 'шт';
     
     // Generate unique item ID
-    var itemId = 'slider_item_' + Date.now();
+    var itemId = 'slider_item_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
     
     // Check if item already exists in cart by product name
     var existingItem = null;
@@ -703,7 +702,7 @@ function addSliderProductToCart(button) {
         updateCartPrice(existingItem, newQuantity);
         
     } else {
-        // Create new cart item using the same structure as your existing addToCart function
+        // Create new cart item
         var cartItem = `
             <div class="cart-item ${isWeightBased ? 'weight-based-item' : ''}" 
                 data-item-id="${itemId}" 
@@ -716,12 +715,12 @@ function addSliderProductToCart(button) {
                         <h4 class="cart_product_title" packaging="${packaging}">${productName}</h4>
                         <p class="ingredients-list cart_ingredients">Додатковий товар</p>
                         <div class="product_quantity product_quantity_cart">
-                            <a href="#" class="minus minus_cart w-inline-block" id="minus_cart">-</a>
-                            <input type="number" class="quantity quantity_cart w-input" maxlength="256" name="Quantity" data-name="Quantity" placeholder="" id="Quantity" 
+                            <a href="#" class="minus minus_cart w-inline-block">-</a>
+                            <input type="number" class="quantity quantity_cart w-input" maxlength="256" name="Quantity" data-name="Quantity" 
                                 value="${quantity}" 
                                 required="" ${isWeightBased ? `min="${minWeight}" step="${weightStep}"` : 'min="1"'}>
                             <span class="unit-label">${unitLabel}</span>
-                            <a href="#" class="plus plus_cart w-inline-block" id="plus_cart">+</a>
+                            <a href="#" class="plus plus_cart w-inline-block">+</a>
                         </div>
                     </div>
                 </div>
@@ -736,39 +735,54 @@ function addSliderProductToCart(button) {
         cartItemsContainer.append(cartItem);
     }
     
-    // Use your existing saveCart function
+    // Save cart and update UI
     saveCart();
     updateCartNumber();
     
-    // Show feedback
+    // Show feedback - FIXED: Separate handling for different button types
+    showSliderButtonFeedback($button);
+}
+
+// Separate function to handle slider button feedback
+function showSliderButtonFeedback($button) {
     if ($button.hasClass('add_card_slider_mobile')) {
+        var originalText = $button.text();
         $button.text('Додано в кошик');
         setTimeout(function() {
-            $button.text('Додати в кошик');
-        }, 5000);
-    } else {
+            $button.text(originalText);
+        }, 2000);
+    } else if ($button.hasClass('add_card_slider')) {
         var originalText = $button.text();
         $button.text('Додано');
         setTimeout(function() {
             $button.text(originalText);
-        }, 5000);
+        }, 2000);
     }
 }
 
-// ADD EVENT LISTENERS FOR SLIDER BUTTONS
-// Add this inside your existing $(document).ready function:
-
+// UPDATED EVENT LISTENERS - Replace the existing ones
 $(document).ready(function () {
-    // Add event listeners for slider add to cart buttons
+    // FIXED: Prevent event bubbling and ensure only slider function is called
     $(document).on('click', '.add_card_slider', function (e) {
         e.preventDefault();
+        e.stopPropagation(); // Prevent event bubbling
         addSliderProductToCart(this);
     });
     
-    // Add event listeners for mobile slider add to cart buttons  
+    // FIXED: Prevent event bubbling and ensure only slider function is called
     $(document).on('click', '.add_card_slider_mobile', function (e) {
         e.preventDefault();
+        e.stopPropagation(); // Prevent event bubbling
         addSliderProductToCart(this);
+    });
+    
+    // EXISTING: Keep your original add to cart functionality unchanged
+    $('.add_card').on('click', function (e) {
+        e.preventDefault();
+        // Make sure this only applies to main product buttons, not slider buttons
+        if (!$(this).hasClass('add_card_slider') && !$(this).hasClass('add_card_slider_mobile')) {
+            addToCart();
+        }
     });
 });
 
