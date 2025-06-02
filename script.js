@@ -649,9 +649,9 @@ $(document).ready(function () {
 
 
 // Доповнення для кошика
-// REPLACE YOUR EXISTING SLIDER CART CODE WITH THIS FIXED VERSION
+// COMPLETELY REPLACE YOUR SLIDER CART CODE WITH THIS CLEAN VERSION
 
-// Function to add slider products to cart - FIXED VERSION
+// Function to add slider products to cart - CLEAN VERSION (NO TEXT CHANGES)
 function addSliderProductToCart(button) {
     var $button = $(button);
     var $sliderItem = $button.closest('.cart-item_slider');
@@ -662,7 +662,7 @@ function addSliderProductToCart(button) {
     var productPriceElement = $sliderItem.find('.price_slider');
     var productPrice = parseFloat(productPriceElement.attr('price')) || 0;
     
-    // Check if product is weight-based (optional - you can add this attribute if needed)
+    // Check if product is weight-based
     var isWeightBased = productPriceElement.attr('weight-based') !== undefined;
     var weightStep = parseInt(productPriceElement.attr('weight-step')) || 100;
     var minWeight = parseInt(productPriceElement.attr('min-weight')) || weightStep;
@@ -735,56 +735,64 @@ function addSliderProductToCart(button) {
         cartItemsContainer.append(cartItem);
     }
     
-    // Save cart and update UI
+    // Save cart and update UI - NO TEXT CHANGES FOR SLIDER BUTTONS
     saveCart();
     updateCartNumber();
-    
-    // Show feedback - FIXED: Separate handling for different button types
-    showSliderButtonFeedback($button);
 }
 
-// Separate function to handle slider button feedback
-function showSliderButtonFeedback($button) {
-    if ($button.hasClass('add_card_slider_mobile')) {
-        var originalText = $button.text();
-        $button.text('Додано в кошик');
-        setTimeout(function() {
-            $button.text(originalText);
-        }, 2000);
-    } else if ($button.hasClass('add_card_slider')) {
-        var originalText = $button.text();
-        $button.text('Додано');
-        setTimeout(function() {
-            $button.text(originalText);
-        }, 2000);
-    }
-}
-
-// UPDATED EVENT LISTENERS - Replace the existing ones
+// UPDATED EVENT LISTENERS - COMPLETE ISOLATION
 $(document).ready(function () {
-    // FIXED: Prevent event bubbling and ensure only slider function is called
+    
+    // SLIDER BUTTONS - Completely separate handlers
     $(document).on('click', '.add_card_slider', function (e) {
         e.preventDefault();
-        e.stopPropagation(); // Prevent event bubbling
+        e.stopImmediatePropagation(); // Complete event isolation
         addSliderProductToCart(this);
+        return false;
     });
     
-    // FIXED: Prevent event bubbling and ensure only slider function is called
     $(document).on('click', '.add_card_slider_mobile', function (e) {
-        e.preventDefault();
-        e.stopPropagation(); // Prevent event bubbling
+        e.preventDefault(); 
+        e.stopImmediatePropagation(); // Complete event isolation
         addSliderProductToCart(this);
+        return false;
     });
     
-    // EXISTING: Keep your original add to cart functionality unchanged
+    // MAIN PRODUCT BUTTON - Updated to exclude slider buttons
     $('.add_card').on('click', function (e) {
-        e.preventDefault();
-        // Make sure this only applies to main product buttons, not slider buttons
+        // Only handle if it's NOT a slider button
         if (!$(this).hasClass('add_card_slider') && !$(this).hasClass('add_card_slider_mobile')) {
+            e.preventDefault();
+            addToCart();
+        }
+    });
+    
+    // If you have delegated event for add_card, replace it with this:
+    $(document).off('click', '.add_card'); // Remove any existing delegated events
+    $(document).on('click', '.add_card', function (e) {
+        // Only handle if it's NOT a slider button
+        if (!$(this).hasClass('add_card_slider') && !$(this).hasClass('add_card_slider_mobile')) {
+            e.preventDefault();
             addToCart();
         }
     });
 });
+
+// IMPORTANT: Also make sure your main addToCart() function doesn't get called for slider items
+// Add this check at the beginning of your addToCart() function:
+/*
+function addToCart() {
+    // Add this check at the very beginning of your existing addToCart function:
+    if (event && event.target && (
+        $(event.target).hasClass('add_card_slider') || 
+        $(event.target).hasClass('add_card_slider_mobile')
+    )) {
+        return; // Exit early if it's a slider button
+    }
+    
+    // ... rest of your existing addToCart code ...
+}
+*/
 
 
 
