@@ -187,278 +187,204 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 // Оптимізований код для кошика
-// Оптимізований код для кошика
+// === FIXED CART MANAGEMENT SYSTEM ===
+
+// Global variables
 var cartItemsContainer;
 var savedCartItems;
 var originalTotalPrice = 0;
 var promoCodeApplied = false;
 
-function updateCartNumber() {
-    var itemCount = $('#cart-items').children('.cart-item').length;
-    $('.cart_number').text(itemCount);
-}
-
-function saveCart() {
-    var cartItems = Array.from(cartItemsContainer.children()).map(item => {
-        var $item = $(item);
-        var initialPricePerUnit = parseFloat($item.data('initial-price')) || 0;
-        var quantity = parseInt($item.find('.quantity_cart').val(), 10) || 1;
-        var isWeightBased = $item.data('weight-based') === true;
-        var referenceWeight = parseInt($item.data('reference-weight')) || 100;
-        var weightStep = parseInt($item.data('weight-step')) || 100;
-        var minWeight = parseInt($item.data('min-weight')) || weightStep;
-        var itemId = $item.data('item-id');
-        var totalPrice;
-
-        if (isWeightBased) {
-            // For weight-based products: (price per reference weight) * (weight / reference weight)
-            totalPrice = initialPricePerUnit * (quantity / referenceWeight);
-        } else {
-            // For quantity-based products: price * quantity
-            totalPrice = initialPricePerUnit * quantity;
-        }
-
-        if (!isNaN(totalPrice)) {
-            $item.find('.cart_price').text(`${formatPrice(totalPrice)} ₴`);
-        } else {
-            totalPrice = 0;
-            $item.find('.cart_price').text(`${totalPrice} ₴`);
-        }
-
-        // Store cart item data separately for checkout page access
-        var itemData = {
-            id: itemId,
-            initialPricePerUnit: initialPricePerUnit,
-            quantity: quantity,
-            isWeightBased: isWeightBased,
-            referenceWeight: referenceWeight,
-            weightStep: weightStep,
-            minWeight: minWeight,
-            totalPrice: totalPrice
-        };
-        
-        // Store individual item data with its ID for checkout page
-        localStorage.setItem('cartItem_' + itemId, JSON.stringify(itemData));
-
-        return {
-            html: item.outerHTML,
-            initialPricePerUnit: initialPricePerUnit,
-            quantity: quantity,
-            isWeightBased: isWeightBased,
-            referenceWeight: referenceWeight,
-            weightStep: weightStep,
-            minWeight: minWeight,
-            itemId: itemId
-        };
-    });
-
-    // Also store all item IDs to know which items are in cart
-    var itemIds = cartItems.map(item => item.itemId);
-    localStorage.setItem('cartItemIds', JSON.stringify(itemIds));
-    localStorage.setItem('cartItems', JSON.stringify(cartItems));
-    updateCartTotal();
-    updateCartNumber();
-}
-
-function updateCartTotal() {
-    var total = 0;
-    var packagingTotal = 0; // Змінна для вартості упаковки
-
-    $('.cart-item .cart_price').each(function () {
-        var priceText = $(this).text().replace('₴', '').trim();
-        var price = parseFloat(priceText);
-        if (!isNaN(price)) {
-            total += price;
-        }
-    });
-
-    // Розраховуємо вартість упаковки для кожного товару
-    $('.cart-item').each(function () {
-        var $item = $(this);
-        var quantity = parseInt($item.find('.quantity_cart').val(), 10) || 1;
-        var packagingPrice = parseInt($item.data('packaging')) || 0;
-        
-        // Для вагових товарів пакування може розраховуватися інакше
-        var isWeightBased = $item.data('weight-based') === true;
-        if (isWeightBased) {
-            var weightStep = parseInt($item.data('weight-step')) || 100;
-            var packagingFactor = Math.ceil(quantity / weightStep); // Кількість упаковок залежно від ваги
-            packagingTotal += packagingPrice * packagingFactor;
-        } else {
-            packagingTotal += packagingPrice * quantity;
-        }
-    });
-
-    // Додаємо вартість упаковки до загальної вартості
-    total += packagingTotal;
-
-    if (total > 0) {
-        $('.cart_total-price').text(`${formatPrice(total)} ₴`);
-        originalTotalPrice = total; // Зберегти початкову загальну вартість
-    } else {
-        $('.cart_total-price').text(`0 ₴`);
-    }
-
-    // Виводимо вартість упаковки в відповідний елемент
-    $('.packaging_price').text(`${formatPrice(packagingTotal)} ₴`);
-}
-
-function formatPrice(price) {
-    // Відображення значення після крапки, якщо воно більше 0
-    var formattedPrice = price.toFixed(2);
-    return formattedPrice.endsWith('.00') ? formattedPrice.split('.')[0] : formattedPrice;
-}
-
-function restoreCart(savedCartItems) {
-    // Clear the container first
-    cartItemsContainer.empty();
+// === MAIN PRODUCT ADDITION (from product page) ===
+function addToCart() {
+    // Get product information from PRODUCT PAGE elements (not slider)
+    var $productPrice = $('.price').not('.price_slider'); // Exclude slider prices
+    var burgerImage = $('.img_block img').attr('src');
+    var burgerName = $('.product_title').not('.product_title-slider_test').text(); // Exclude slider titles
+    var burgerIngredients = getSelectedIngredients().replace(/, /g, '<br>');
+    var quantityInput = $('#quantity_card'); // Main product page quantity input
+    var burgerQuantity = quantityInput.val();
+    var packaging = $('.product_title').not('.product_title-slider_test').attr('packaging');
     
-    if (!savedCartItems || !savedCartItems.length) {
-        updateCartTotal();
-        updateCartNumber();
+    // Safety check - ensure we're getting the right elements
+    if (!$productPrice.length || !burgerName || !quantityInput.length) {
+        console.error('Main product elements not found');
         return;
     }
     
-    // Rebuild cart items from saved data
-    savedCartItems.forEach(item => {
-        // Get the latest quantity data for this item (might have been updated)
-        let itemId = item.itemId;
-        let latestItemData = null;
-        
-        if (itemId) {
-            try {
-                const storedItemData = localStorage.getItem('cartItem_' + itemId);
-                if (storedItemData) {
-                    latestItemData = JSON.parse(storedItemData);
-                }
-            } catch (e) {
-                console.error("Error parsing stored item data:", e);
-            }
-        }
-        
-        // Use the most up-to-date quantity if available
-        const quantity = latestItemData ? latestItemData.quantity : (item.quantity || 1);
-        
-        // Create a temporary DOM element to parse the HTML
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = item.html;
-        const cartItemElement = tempDiv.firstChild;
-        
-        // Update the quantity input value before appending
-        const quantityInput = cartItemElement.querySelector('.quantity_cart');
-        if (quantityInput) {
-            quantityInput.value = quantity;
-        }
-        
-        // Append the element to the container
-        cartItemsContainer.append(cartItemElement);
-        
-        // Get reference to the newly added item
-        const $cartItem = $(cartItemsContainer.children().last());
-        
-        // Set/update all necessary data attributes
-        if (item.itemId) {
-            $cartItem.attr('data-item-id', item.itemId);
-        }
-        
-        if (item.isWeightBased) {
-            $cartItem.data('weight-based', true);
-            $cartItem.data('reference-weight', item.referenceWeight);
-            
-            // Update weight-related attributes
-            if (item.weightStep) $cartItem.data('weight-step', item.weightStep);
-            if (item.minWeight) $cartItem.data('min-weight', item.minWeight);
-            
-            // Add styling class
-            $cartItem.addClass('weight-based-item');
-            
-            // Ensure unit label is correct
-            const unitLabel = $cartItem.find('.quantity_cart').next('.unit-label');
-            if (unitLabel.length) {
-                unitLabel.text('г');
-            } else {
-                $('<span class="unit-label">г</span>').insertAfter($cartItem.find('.quantity_cart'));
-            }
-        }
-        
-        // Update the price display based on latest quantity
-        updateCartPrice($cartItem, quantity);
-    });
-    
-    updateCartTotal();
-    updateCartNumber();
-}
-
-function addToCart() {
-    var $productPrice = $('.price');
-    var burgerImage = $('.img_block img').attr('src');
-    var burgerName = $('.product_title').text();
-    var burgerIngredients = getSelectedIngredients().replace(/, /g, '<br>');
-    var quantityInput = $('#quantity_card');
-    var burgerQuantity = quantityInput.val();
-    var packaging = $('.product_title').attr('packaging'); // Отримуємо значення атрибуту packaging
-    
-    // Визначаємо, чи є товар ваговим
+    // Get product characteristics
     var isWeightBased = $productPrice.attr('weight-based') !== undefined;
     var weightStep = parseInt($productPrice.attr('weight-step')) || 100;
     var minWeight = parseInt($productPrice.attr('min-weight')) || weightStep;
     var referenceWeight = parseInt($productPrice.attr('reference-weight')) || 100;
     
-    // Отримуємо базову ціну (ціна за одиницю або за referenceWeight)
+    // Get current base price (with any selected options)
     var burgerPricePerUnit = parseFloat($productPrice.attr('current-base-price') || $productPrice.attr('price')) || 0;
     
     var unitLabel = isWeightBased ? 'г' : 'шт';
-    
-    var itemId = 'item_' + Date.now();
+    var itemId = 'main_item_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
 
-    var cartItem = `
-        <div class="cart-item ${isWeightBased ? 'weight-based-item' : ''}" 
-            data-item-id="${itemId}" 
-            data-initial-price="${burgerPricePerUnit}" 
-            data-packaging="${packaging}"
-            ${isWeightBased ? `data-weight-based="true" data-reference-weight="${referenceWeight}" data-weight-step="${weightStep}" data-min-weight="${minWeight}"` : ''}>
+    // Check for existing item
+    var existingItem = findExistingCartItem(burgerName, burgerIngredients);
+    
+    if (existingItem) {
+        // Update existing item
+        var existingQuantityInput = existingItem.find('.quantity_cart');
+        var currentQuantity = parseInt(existingQuantityInput.val(), 10);
+        var newQuantity = isWeightBased ? currentQuantity + parseInt(burgerQuantity) : currentQuantity + parseInt(burgerQuantity);
+        existingQuantityInput.val(newQuantity);
+        updateCartPrice(existingItem, newQuantity);
+    } else {
+        // Create new cart item
+        var cartItem = createCartItemHTML({
+            itemId: itemId,
+            image: burgerImage,
+            name: burgerName,
+            ingredients: burgerIngredients,
+            quantity: burgerQuantity,
+            pricePerUnit: burgerPricePerUnit,
+            packaging: packaging || '0',
+            isWeightBased: isWeightBased,
+            weightStep: weightStep,
+            minWeight: minWeight,
+            referenceWeight: referenceWeight,
+            unitLabel: unitLabel
+        });
+        
+        cartItemsContainer.append(cartItem);
+    }
+
+    saveCart();
+    updateCartNumber();
+
+    // Visual feedback
+    var $addButton = $('.add_card').not('.add_card_slider, .add_card_slider_mobile');
+    $addButton.text('Додано в кошик');
+    setTimeout(function() {
+        $addButton.text('Додати в кошик');
+    }, 5000);
+}
+
+// === SLIDER PRODUCT ADDITION ===
+function addSliderProductToCart(button) {
+    var $button = $(button);
+    var $sliderItem = $button.closest('.cart-item_slider');
+    
+    // Get product information from SLIDER elements
+    var productImage = $sliderItem.find('.cart-img_slider').attr('src');
+    var productName = $sliderItem.find('.product_title-slider_test').text().trim();
+    var productPriceElement = $sliderItem.find('.price_slider'); // Specifically slider price
+    var productPrice = parseFloat(productPriceElement.attr('price')) || 0;
+    
+    // Safety check
+    if (!productPriceElement.length || !productName) {
+        console.error('Slider product elements not found');
+        return;
+    }
+    
+    var isWeightBased = productPriceElement.attr('weight-based') !== undefined;
+    var weightStep = parseInt(productPriceElement.attr('weight-step')) || 100;
+    var minWeight = parseInt(productPriceElement.attr('min-weight')) || weightStep;
+    var referenceWeight = parseInt(productPriceElement.attr('reference-weight')) || 100;
+    var packaging = productPriceElement.attr('packaging') || '0';
+
+    var quantity = isWeightBased ? minWeight : 1;
+    var unitLabel = isWeightBased ? 'г' : 'шт';
+    var itemId = 'slider_item_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+
+    // Check for existing item (simple name match for slider items)
+    var existingItem = findExistingCartItem(productName);
+
+    if (existingItem) {
+        var existingQuantityInput = existingItem.find('.quantity_cart');
+        var currentQuantity = parseInt(existingQuantityInput.val(), 10);
+        var newQuantity = isWeightBased ? currentQuantity + weightStep : currentQuantity + 1;
+        existingQuantityInput.val(newQuantity);
+        updateCartPrice(existingItem, newQuantity);
+    } else {
+        var cartItem = createCartItemHTML({
+            itemId: itemId,
+            image: productImage,
+            name: productName,
+            ingredients: 'Додатковий товар',
+            quantity: quantity,
+            pricePerUnit: productPrice,
+            packaging: packaging,
+            isWeightBased: isWeightBased,
+            weightStep: weightStep,
+            minWeight: minWeight,
+            referenceWeight: referenceWeight,
+            unitLabel: unitLabel
+        });
+        
+        cartItemsContainer.append(cartItem);
+    }
+
+    saveCart();
+    updateCartNumber();
+}
+
+// === HELPER FUNCTIONS ===
+
+function findExistingCartItem(productName, ingredients = null) {
+    var existingItem = null;
+    cartItemsContainer.find('.cart-item').each(function() {
+        var existingName = $(this).find('.cart_product_title').text().trim();
+        if (existingName === productName) {
+            // For main products, also check ingredients if provided
+            if (ingredients) {
+                var existingIngredients = $(this).find('.cart_ingredients').html();
+                if (existingIngredients === ingredients) {
+                    existingItem = $(this);
+                    return false;
+                }
+            } else {
+                // For slider products, just name match is enough
+                existingItem = $(this);
+                return false;
+            }
+        }
+    });
+    return existingItem;
+}
+
+function createCartItemHTML(config) {
+    return `
+        <div class="cart-item ${config.isWeightBased ? 'weight-based-item' : ''}" 
+            data-item-id="${config.itemId}" 
+            data-initial-price="${config.pricePerUnit}" 
+            data-packaging="${config.packaging}"
+            ${config.isWeightBased ? `data-weight-based="true" data-reference-weight="${config.referenceWeight}" data-weight-step="${config.weightStep}" data-min-weight="${config.minWeight}"` : ''}>
             <div class="cart-items_left">
-                <img class="burger-image" src="${burgerImage}" alt="${burgerName}">
+                <img class="burger-image" src="${config.image}" alt="${config.name}">
                 <div class="cart_info">
-                    <h4 class="cart_product_title" packaging="${packaging}">${burgerName}</h4>
-                    <p class="ingredients-list cart_ingredients">${burgerIngredients}</p>
+                    <h4 class="cart_product_title" packaging="${config.packaging}">${config.name}</h4>
+                    <p class="ingredients-list cart_ingredients">${config.ingredients}</p>
                     <div class="product_quantity product_quantity_cart">
-                        <a href="#" class="minus minus_cart w-inline-block" id="minus_cart">-</a>
-                        <input type="number" class="quantity quantity_cart w-input" maxlength="256" name="Quantity" data-name="Quantity" placeholder="" id="Quantity" 
-                            value="${burgerQuantity}" 
-                            required="" ${isWeightBased ? `min="${minWeight}" step="${weightStep}"` : 'min="1"'}>
-                        <span class="unit-label">${unitLabel}</span>
-                        <a href="#" class="plus plus_cart w-inline-block" id="plus_cart">+</a>
+                        <a href="#" class="minus minus_cart w-inline-block">-</a>
+                        <input type="number" class="quantity quantity_cart w-input" maxlength="256" name="Quantity" data-name="Quantity" 
+                            value="${config.quantity}" 
+                            required ${config.isWeightBased ? `min="${config.minWeight}" step="${config.weightStep}"` : 'min="1"'}>
+                        <span class="unit-label">${config.unitLabel}</span>
+                        <a href="#" class="plus plus_cart w-inline-block">+</a>
                     </div>
                 </div>
             </div>
             <div class="cart-items_right">
-                <p class="cart_price">${calculateItemPrice(burgerPricePerUnit, burgerQuantity, isWeightBased, referenceWeight)}</p>
+                <p class="cart_price">${calculateItemPrice(config.pricePerUnit, config.quantity, config.isWeightBased, config.referenceWeight)}</p>
                 <button class="remove-from-cart">Видалити</button>
                 <div class="burger-details"></div>
             </div>
         </div>
     `;
-
-    cartItemsContainer.append(cartItem);
-    saveCart();
-    updateCartNumber();
-
-    $('.add_card').text('Додано в кошик');
-
-    setTimeout(function() {
-        $('.add_card').text('Додати в кошик');
-    }, 5000);
 }
 
 function calculateItemPrice(pricePerUnit, quantity, isWeightBased, referenceWeight) {
     let totalPrice;
     
     if (isWeightBased) {
-        // For weight-based: (price per reference weight) * (weight / reference weight)
         totalPrice = pricePerUnit * (parseInt(quantity) / referenceWeight);
     } else {
-        // For quantity-based: price * quantity
         totalPrice = pricePerUnit * parseInt(quantity);
     }
     
@@ -467,135 +393,69 @@ function calculateItemPrice(pricePerUnit, quantity, isWeightBased, referenceWeig
 
 function getSelectedIngredients() {
     var selectedIngredients = [];
-
     $('input[data-name="add"]:checked').each(function () {
         var ingredientName = $(this).next('span').text().trim();
         selectedIngredients.push(ingredientName);
     });
-
     return selectedIngredients.join(', ');
 }
 
-function updateCartPrice(cartItem, newQuantity) {
-    var $item = $(cartItem);
-    var initialPricePerUnit = parseFloat($item.data('initial-price'));
-    var isWeightBased = $item.data('weight-based') === true;
-    var referenceWeight = parseInt($item.data('reference-weight')) || 100;
-    
-    var totalPrice;
-    if (isWeightBased) {
-        // Для вагових товарів: (ціна за referenceWeight) * (вага / referenceWeight)
-        totalPrice = initialPricePerUnit * (newQuantity / referenceWeight);
-    } else {
-        // Для звичайних товарів: ціна * кількість
-        totalPrice = initialPricePerUnit * newQuantity;
-    }
-    
-    $item.find('.cart_price').text(`${formatPrice(totalPrice)} ₴`);
-}
-
-function removeFromCart(button) {
-    var itemId = $(button).closest('.cart-item').data('item-id');
-    $(`[data-item-id="${itemId}"]`).remove();
-    
-    // Remove individual item data from localStorage
-    localStorage.removeItem('cartItem_' + itemId);
-    
-    saveCart();
-    updateCartTotal();
-    updateCartNumber();
-}
-
-function decreaseQuantity(cartItem) {
-    var $item = $(cartItem);
-    var quantityInput = $item.find('.quantity_cart');
-    var currentQuantity = parseInt(quantityInput.val(), 10);
-    var isWeightBased = $item.data('weight-based') === true;
-    var newQuantity;
-    
-    if (isWeightBased) {
-        // Для вагових товарів зменшуємо на крок ваги
-        var weightStep = parseInt($item.data('weight-step')) || 100;
-        var minWeight = parseInt($item.data('min-weight')) || weightStep;
-        newQuantity = Math.max(currentQuantity - weightStep, minWeight);
-    } else {
-        // Для звичайних товарів зменшуємо на 1
-        newQuantity = Math.max(currentQuantity - 1, 1);
-    }
-
-    quantityInput.val(newQuantity);
-    updateCartPrice(cartItem, newQuantity);
-    saveCart();
-    updateCartTotal();
-    updateCartNumber();
-}
-
-function increaseQuantity(cartItem) {
-    var $item = $(cartItem);
-    var quantityInput = $item.find('.quantity_cart');
-    var currentQuantity = parseInt(quantityInput.val(), 10);
-    var isWeightBased = $item.data('weight-based') === true;
-    var newQuantity;
-    
-    if (isWeightBased) {
-        // Для вагових товарів збільшуємо на крок ваги
-        var weightStep = parseInt($item.data('weight-step')) || 100;
-        newQuantity = currentQuantity + weightStep;
-    } else {
-        // Для звичайних товарів збільшуємо на 1
-        newQuantity = currentQuantity + 1;
-    }
-
-    quantityInput.val(newQuantity);
-    updateCartPrice(cartItem, newQuantity);
-    saveCart();
-    updateCartTotal();
-    updateCartNumber();
-}
-
-// Функція для застосування промокоду (заглушка)
-function applyPromoCode() {
-    // Реалізуйте обробку промокоду тут
-    console.log("Applying promo code");
-}
-
+// === EVENT HANDLERS (IMPROVED) ===
 $(document).ready(function () {
     cartItemsContainer = $('#cart-items');
     savedCartItems = JSON.parse(localStorage.getItem('cartItems')) || [];
 
     restoreCart(savedCartItems);
 
-    $('.add_card').on('click', function (e) {
-        e.preventDefault();
-        addToCart();
+    // Remove all previous event handlers to prevent conflicts
+    $(document).off('click', '.add_card');
+    $(document).off('click', '.add_card_slider');
+    $(document).off('click', '.add_card_slider_mobile');
+
+    // Main product page "Add to Cart" button (with exclusions)
+    $(document).on('click', '.add_card', function (e) {
+        // Only handle if it's NOT a slider button
+        if (!$(this).hasClass('add_card_slider') && !$(this).hasClass('add_card_slider_mobile')) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            addToCart();
+        }
     });
 
-    // Обробка введення кількості для вагових та звичайних товарів
+    // Slider buttons (specific handlers)
+    $(document).on('click', '.add_card_slider', function (e) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        addSliderProductToCart(this);
+    });
+
+    $(document).on('click', '.add_card_slider_mobile', function (e) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        addSliderProductToCart(this);
+    });
+
+    // Rest of your existing cart event handlers...
     $(document).on('input', '.quantity_cart', function() {
         var $item = $(this).closest('.cart-item');
         var isWeightBased = $item.data('weight-based') === true;
         var newQuantity = parseInt($(this).val(), 10) || 0;
         
         if (isWeightBased) {
-            // Для вагових товарів
             var weightStep = parseInt($item.data('weight-step')) || 100;
             var minWeight = parseInt($item.data('min-weight')) || weightStep;
             
-            // Застосовуємо мінімальну вагу
             if (newQuantity < minWeight) {
                 newQuantity = minWeight;
                 $(this).val(minWeight);
             }
             
-            // Вирівнюємо до кроку ваги
             var remainder = newQuantity % weightStep;
             if (remainder !== 0) {
-                // Округляємо до найближчого кроку
                 newQuantity = Math.round(newQuantity / weightStep) * weightStep;
                 $(this).val(newQuantity);
             }
         } else {
-            // Для звичайних товарів
             if (newQuantity < 1) {
                 newQuantity = 1;
                 $(this).val(1);
@@ -622,150 +482,252 @@ $(document).ready(function () {
         var cartItem = $(this).closest('.cart-item');
         increaseQuantity(cartItem);
     });
-
-    $('#button-promo').on('click', function() {
-        applyPromoCode();
-    });
-
-    $('#promo-code').on('paste', function (e) {
-        if (promoCodeApplied) {
-            e.preventDefault();
-        }
-    });
-
-    $('#promo-code').on('keydown', function (e) {
-        if (e.keyCode === 13) {
-            e.preventDefault();
-            return false;
-        }
-    });
 });
 
+// === KEEP YOUR EXISTING UTILITY FUNCTIONS ===
+// (updateCartNumber, saveCart, updateCartTotal, formatPrice, restoreCart, 
+//  updateCartPrice, removeFromCart, decreaseQuantity, increaseQuantity, etc.)
 
+function updateCartNumber() {
+    var itemCount = $('#cart-items').children('.cart-item').length;
+    $('.cart_number').text(itemCount);
+}
 
+function formatPrice(price) {
+    var formattedPrice = price.toFixed(2);
+    return formattedPrice.endsWith('.00') ? formattedPrice.split('.')[0] : formattedPrice;
+}
 
+function saveCart() {
+    var cartItems = Array.from(cartItemsContainer.children()).map(item => {
+        var $item = $(item);
+        var initialPricePerUnit = parseFloat($item.data('initial-price')) || 0;
+        var quantity = parseInt($item.find('.quantity_cart').val(), 10) || 1;
+        var isWeightBased = $item.data('weight-based') === true;
+        var referenceWeight = parseInt($item.data('reference-weight')) || 100;
+        var weightStep = parseInt($item.data('weight-step')) || 100;
+        var minWeight = parseInt($item.data('min-weight')) || weightStep;
+        var itemId = $item.data('item-id');
+        var totalPrice;
 
-
-// === Слайдер: Додавання продуктів до кошика (виправлена версія) ===
-
-function addSliderProductToCart(button) {
-    var $button = $(button);
-    var $sliderItem = $button.closest('.cart-item_slider');
-    
-    // Інформація про продукт
-    var productImage = $sliderItem.find('.cart-img_slider').attr('src');
-    var productName = $sliderItem.find('.product_title-slider_test').text().trim();
-    var productPriceElement = $sliderItem.find('.price_slider');
-    var productPrice = parseFloat(productPriceElement.attr('price')) || 0;
-    
-    var isWeightBased = productPriceElement.attr('weight-based') !== undefined;
-    var weightStep = parseInt(productPriceElement.attr('weight-step')) || 100;
-    var minWeight = parseInt(productPriceElement.attr('min-weight')) || weightStep;
-    var referenceWeight = parseInt(productPriceElement.attr('reference-weight')) || 100;
-    var packaging = productPriceElement.attr('packaging') || '0';
-
-    var quantity = isWeightBased ? minWeight : 1;
-    var unitLabel = isWeightBased ? 'г' : 'шт';
-
-    var itemId = 'slider_item_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-
-    // Перевірка на існуючий товар у кошику
-    var existingItem = null;
-    cartItemsContainer.find('.cart-item').each(function() {
-        var existingName = $(this).find('.cart_product_title').text().trim();
-        if (existingName === productName) {
-            existingItem = $(this);
-            return false;
+        if (isWeightBased) {
+            totalPrice = initialPricePerUnit * (quantity / referenceWeight);
+        } else {
+            totalPrice = initialPricePerUnit * quantity;
         }
+
+        if (!isNaN(totalPrice)) {
+            $item.find('.cart_price').text(`${formatPrice(totalPrice)} ₴`);
+        } else {
+            totalPrice = 0;
+            $item.find('.cart_price').text(`${totalPrice} ₴`);
+        }
+
+        var itemData = {
+            id: itemId,
+            initialPricePerUnit: initialPricePerUnit,
+            quantity: quantity,
+            isWeightBased: isWeightBased,
+            referenceWeight: referenceWeight,
+            weightStep: weightStep,
+            minWeight: minWeight,
+            totalPrice: totalPrice
+        };
+        
+        localStorage.setItem('cartItem_' + itemId, JSON.stringify(itemData));
+
+        return {
+            html: item.outerHTML,
+            initialPricePerUnit: initialPricePerUnit,
+            quantity: quantity,
+            isWeightBased: isWeightBased,
+            referenceWeight: referenceWeight,
+            weightStep: weightStep,
+            minWeight: minWeight,
+            itemId: itemId
+        };
     });
 
-    if (existingItem && existingItem.length > 0) {
-        var existingQuantityInput = existingItem.find('.quantity_cart');
-        var currentQuantity = parseInt(existingQuantityInput.val(), 10);
-        var newQuantity = isWeightBased ? currentQuantity + weightStep : currentQuantity + 1;
-        existingQuantityInput.val(newQuantity);
-        updateCartPrice(existingItem, newQuantity);
-    } else {
-        var cartItem = `
-            <div class="cart-item ${isWeightBased ? 'weight-based-item' : ''}" 
-                data-item-id="${itemId}" 
-                data-initial-price="${productPrice}" 
-                data-packaging="${packaging}"
-                ${isWeightBased ? `data-weight-based="true" data-reference-weight="${referenceWeight}" data-weight-step="${weightStep}" data-min-weight="${minWeight}"` : ''}>
-                <div class="cart-items_left">
-                    <img class="burger-image" src="${productImage}" alt="${productName}">
-                    <div class="cart_info">
-                        <h4 class="cart_product_title" packaging="${packaging}">${productName}</h4>
-                        <p class="ingredients-list cart_ingredients">Додатковий товар</p>
-                        <div class="product_quantity product_quantity_cart">
-                            <a href="#" class="minus minus_cart w-inline-block">-</a>
-                            <input type="number" class="quantity quantity_cart w-input" maxlength="256" name="Quantity" data-name="Quantity" 
-                                value="${quantity}" 
-                                required ${isWeightBased ? `min="${minWeight}" step="${weightStep}"` : 'min="1"'}>
-                            <span class="unit-label">${unitLabel}</span>
-                            <a href="#" class="plus plus_cart w-inline-block">+</a>
-                        </div>
-                    </div>
-                </div>
-                <div class="cart-items_right">
-                    <p class="cart_price">${calculateItemPrice(productPrice, quantity, isWeightBased, referenceWeight)}</p>
-                    <button class="remove-from-cart">Видалити</button>
-                    <div class="burger-details"></div>
-                </div>
-            </div>
-        `;
-        cartItemsContainer.append(cartItem);
-    }
-
-    saveCart();
+    var itemIds = cartItems.map(item => item.itemId);
+    localStorage.setItem('cartItemIds', JSON.stringify(itemIds));
+    localStorage.setItem('cartItems', JSON.stringify(cartItems));
+    updateCartTotal();
     updateCartNumber();
 }
 
-// === Ініціалізація подій (оновлена та ізольована) ===
-$(document).ready(function () {
-    // Видаляємо попередні обробники
-    $(document).off('click', '.add_card_slider');
-    $(document).off('click', '.add_card_slider_mobile');
-    $(document).off('click', '.add_card');
+function updateCartTotal() {
+    var total = 0;
+    var packagingTotal = 0;
 
-    // Кнопки з слайдера
-    $(document).on('click', '.add_card_slider', function (e) {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        addSliderProductToCart(this);
-        return false;
-    });
-
-    $(document).on('click', '.add_card_slider_mobile', function (e) {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        addSliderProductToCart(this);
-        return false;
-    });
-
-    // Головні кнопки додавання (не зі слайдера)
-    $(document).on('click', '.add_card', function (e) {
-        if (!$(this).hasClass('add_card_slider') && !$(this).hasClass('add_card_slider_mobile')) {
-            e.preventDefault();
-            e.stopImmediatePropagation();
-            addToCart(); // твоя основна функція
+    $('.cart-item .cart_price').each(function () {
+        var priceText = $(this).text().replace('₴', '').trim();
+        var price = parseFloat(priceText);
+        if (!isNaN(price)) {
+            total += price;
         }
     });
-});
 
-// === Додай це у початок своєї функції addToCart() ===
-/*
-function addToCart() {
-    if (event && event.target && (
-        $(event.target).hasClass('add_card_slider') || 
-        $(event.target).hasClass('add_card_slider_mobile')
-    )) {
-        return;
+    $('.cart-item').each(function () {
+        var $item = $(this);
+        var quantity = parseInt($item.find('.quantity_cart').val(), 10) || 1;
+        var packagingPrice = parseInt($item.data('packaging')) || 0;
+        
+        var isWeightBased = $item.data('weight-based') === true;
+        if (isWeightBased) {
+            var weightStep = parseInt($item.data('weight-step')) || 100;
+            var packagingFactor = Math.ceil(quantity / weightStep);
+            packagingTotal += packagingPrice * packagingFactor;
+        } else {
+            packagingTotal += packagingPrice * quantity;
+        }
+    });
+
+    total += packagingTotal;
+
+    if (total > 0) {
+        $('.cart_total-price').text(`${formatPrice(total)} ₴`);
+        originalTotalPrice = total;
+    } else {
+        $('.cart_total-price').text(`0 ₴`);
     }
 
-    // ...твій існуючий код
+    $('.packaging_price').text(`${formatPrice(packagingTotal)} ₴`);
 }
-*/
+
+function updateCartPrice(cartItem, newQuantity) {
+    var $item = $(cartItem);
+    var initialPricePerUnit = parseFloat($item.data('initial-price'));
+    var isWeightBased = $item.data('weight-based') === true;
+    var referenceWeight = parseInt($item.data('reference-weight')) || 100;
+    
+    var totalPrice;
+    if (isWeightBased) {
+        totalPrice = initialPricePerUnit * (newQuantity / referenceWeight);
+    } else {
+        totalPrice = initialPricePerUnit * newQuantity;
+    }
+    
+    $item.find('.cart_price').text(`${formatPrice(totalPrice)} ₴`);
+}
+
+function removeFromCart(button) {
+    var itemId = $(button).closest('.cart-item').data('item-id');
+    $(`[data-item-id="${itemId}"]`).remove();
+    localStorage.removeItem('cartItem_' + itemId);
+    saveCart();
+    updateCartTotal();
+    updateCartNumber();
+}
+
+function decreaseQuantity(cartItem) {
+    var $item = $(cartItem);
+    var quantityInput = $item.find('.quantity_cart');
+    var currentQuantity = parseInt(quantityInput.val(), 10);
+    var isWeightBased = $item.data('weight-based') === true;
+    var newQuantity;
+    
+    if (isWeightBased) {
+        var weightStep = parseInt($item.data('weight-step')) || 100;
+        var minWeight = parseInt($item.data('min-weight')) || weightStep;
+        newQuantity = Math.max(currentQuantity - weightStep, minWeight);
+    } else {
+        newQuantity = Math.max(currentQuantity - 1, 1);
+    }
+
+    quantityInput.val(newQuantity);
+    updateCartPrice(cartItem, newQuantity);
+    saveCart();
+    updateCartTotal();
+    updateCartNumber();
+}
+
+function increaseQuantity(cartItem) {
+    var $item = $(cartItem);
+    var quantityInput = $item.find('.quantity_cart');
+    var currentQuantity = parseInt(quantityInput.val(), 10);
+    var isWeightBased = $item.data('weight-based') === true;
+    var newQuantity;
+    
+    if (isWeightBased) {
+        var weightStep = parseInt($item.data('weight-step')) || 100;
+        newQuantity = currentQuantity + weightStep;
+    } else {
+        newQuantity = currentQuantity + 1;
+    }
+
+    quantityInput.val(newQuantity);
+    updateCartPrice(cartItem, newQuantity);
+    saveCart();
+    updateCartTotal();
+    updateCartNumber();
+}
+
+function restoreCart(savedCartItems) {
+    cartItemsContainer.empty();
+    
+    if (!savedCartItems || !savedCartItems.length) {
+        updateCartTotal();
+        updateCartNumber();
+        return;
+    }
+    
+    savedCartItems.forEach(item => {
+        let itemId = item.itemId;
+        let latestItemData = null;
+        
+        if (itemId) {
+            try {
+                const storedItemData = localStorage.getItem('cartItem_' + itemId);
+                if (storedItemData) {
+                    latestItemData = JSON.parse(storedItemData);
+                }
+            } catch (e) {
+                console.error("Error parsing stored item data:", e);
+            }
+        }
+        
+        const quantity = latestItemData ? latestItemData.quantity : (item.quantity || 1);
+        
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = item.html;
+        const cartItemElement = tempDiv.firstChild;
+        
+        const quantityInput = cartItemElement.querySelector('.quantity_cart');
+        if (quantityInput) {
+            quantityInput.value = quantity;
+        }
+        
+        cartItemsContainer.append(cartItemElement);
+        
+        const $cartItem = $(cartItemsContainer.children().last());
+        
+        if (item.itemId) {
+            $cartItem.attr('data-item-id', item.itemId);
+        }
+        
+        if (item.isWeightBased) {
+            $cartItem.data('weight-based', true);
+            $cartItem.data('reference-weight', item.referenceWeight);
+            
+            if (item.weightStep) $cartItem.data('weight-step', item.weightStep);
+            if (item.minWeight) $cartItem.data('min-weight', item.minWeight);
+            
+            $cartItem.addClass('weight-based-item');
+            
+            const unitLabel = $cartItem.find('.quantity_cart').next('.unit-label');
+            if (unitLabel.length) {
+                unitLabel.text('г');
+            } else {
+                $('<span class="unit-label">г</span>').insertAfter($cartItem.find('.quantity_cart'));
+            }
+        }
+        
+        updateCartPrice($cartItem, quantity);
+    });
+    
+    updateCartTotal();
+    updateCartNumber();
+}
 
 
 
