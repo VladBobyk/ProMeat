@@ -841,23 +841,30 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 
-function checkAddressAvailability() {
-    const now = new Date();
-    const currentHour = now.getHours();
-    const currentMinute = now.getMinutes();
-    const currentTimeInMinutes = currentHour * 60 + currentMinute;
-    const cutoffTime = 18 * 60 + 20; // 20:40
-    
-    const firstAddress = document.getElementById('first_address');
-    
-    if (currentTimeInMinutes >= cutoffTime) {
-        firstAddress.style.display = 'none'; // or add a 'hidden' class
-    } else {
-        firstAddress.style.display = 'block'; // or remove 'hidden' class
-    }
-}
 
-// Run immediately and then every minute
-checkAddressAvailability();
-setInterval(checkAddressAvailability, 60000);
+
+
+// Приховати адресу
+  function toggleFirstAddressVisibility() {
+    const element = document.getElementById("first_addres");
+    if (!element) return;
+
+    const now = new Date();
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+    const startMinutes = 11 * 60;      // 11:00
+    const endMinutes = 18 * 60 + 30;   // 20:40
+
+    if (currentMinutes >= startMinutes && currentMinutes <= endMinutes) {
+      element.style.display = "";
+    } else {
+      element.style.display = "none";
+    }
+  }
+
+  // Виклик функції при завантаженні сторінки
+  window.addEventListener("DOMContentLoaded", toggleFirstAddressVisibility);
+
+  // Оновлення кожну хвилину, якщо користувач довго на сторінці
+  setInterval(toggleFirstAddressVisibility, 60000);
 
