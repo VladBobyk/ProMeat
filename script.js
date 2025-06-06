@@ -772,7 +772,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Робочий графік: старт і кінець часу (вказано у форматі [години, хвилини])
     const workingHoursStart = [11, 00]; // Початок: 11:00
-    const workingHoursEnd = [21, 30]; // Кінець: 21:30
+    const workingHoursEnd = [21, 20]; // Кінець: 21:20
 
     let nextAvailableDay = new Date(currentDate); // Початково припускаємо, що доступний день — сьогодні
 
@@ -853,7 +853,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
     const startMinutes = 11 * 60;      // 11:00
-    const endMinutes = 18 * 60 + 30;   // 20:40
+    const endMinutes = 20 * 60 + 40;   // 20:40
 
     if (currentMinutes >= startMinutes && currentMinutes <= endMinutes) {
       element.style.display = "";
