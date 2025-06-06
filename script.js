@@ -771,8 +771,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const productContent = document.querySelectorAll('.product_content');
 
     // Робочий графік: старт і кінець часу (вказано у форматі [години, хвилини])
-    const workingHoursStart = [10, 00]; // Початок: 10:00
-    const workingHoursEnd = [20, 40]; // Кінець: 20:40
+    const workingHoursStart = [11, 00]; // Початок: 11:00
+    const workingHoursEnd = [21, 30]; // Кінець: 21:30
 
     let nextAvailableDay = new Date(currentDate); // Початково припускаємо, що доступний день — сьогодні
 
@@ -840,4 +840,24 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 
+
+function checkAddressAvailability() {
+    const now = new Date();
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+    const currentTimeInMinutes = currentHour * 60 + currentMinute;
+    const cutoffTime = 18 * 60 + 20; // 20:40
+    
+    const firstAddress = document.getElementById('first_address');
+    
+    if (currentTimeInMinutes >= cutoffTime) {
+        firstAddress.style.display = 'none'; // or add a 'hidden' class
+    } else {
+        firstAddress.style.display = 'block'; // or remove 'hidden' class
+    }
+}
+
+// Run immediately and then every minute
+checkAddressAvailability();
+setInterval(checkAddressAvailability, 60000);
 
