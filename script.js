@@ -731,13 +731,18 @@ function restoreCart(savedCartItems) {
 
 
 
+ // === pop up ===
+
+
 $(document).ready(function () {
   let cart = JSON.parse(localStorage.getItem("cart")) || [];
 
+  // Функція для оновлення даних в localStorage
   function updateLocalStorage() {
     localStorage.setItem("cart", JSON.stringify(cart));
   }
 
+  // Функція додавання товару в кошик
   function addToCart(product) {
     const existingProduct = cart.find((item) => item.name === product.name);
     if (existingProduct) {
@@ -749,6 +754,7 @@ $(document).ready(function () {
     updateCart();
   }
 
+  // Функція оновлення відображення кошика
   function updateCart() {
     const cartItemsContainer = $(".cart-items");
     cartItemsContainer.empty();
@@ -781,33 +787,42 @@ $(document).ready(function () {
 
     $(".total-price").text(total.toFixed(2));
   }
-  
-  // === SPECIAL OFFER POPUP HANDLER ===
-  // Ця функція тепер відповідає ТІЛЬКИ за логіку додавання товару з картки
-  function handleSpecialOfferPopup() {
-      // Використовуємо .off().on() щоб уникнути подвійного призначення обробника
-      $('.special-offer-add-to-cart-btn').off('click').on('click', function() {
-          const card = $(this).closest('.special-offer-card');
-          const productName = card.find('.special-offer-product-name').text();
-          const productPrice = parseFloat(card.find('.special-offer-price-new').text().replace(' UAH', ''));
-          
-          if (productName && !isNaN(productPrice)) {
-              const product = {
-                  name: productName,
-                  price: productPrice,
-                  quantity: 1,
-              };
-              addToCart(product);
-              // Закриваємо модальне вікно (якщо це потрібно зробити програмно)
-              // Наприклад, якщо у вас є кнопка закриття з класом .close-popup
-              // $('.close-popup').trigger('click'); 
-          }
-      });
-  }
 
-  // === EVENT HANDLERS ===
-  
-  // Делегований обробник для кнопок +/- в кошику
+  // === ОБРОБНИКИ ПОДІЙ (EVENT HANDLERS) ===
+
+  // 1. Додавання товару зі звичайної картки товару
+  $(".add-to-cart-btn").on("click", function () {
+    const card = $(this).closest(".product-card");
+    const product = {
+      name: card.find(".product-name").text(),
+      price: parseFloat(card.find(".product-price").text().replace(" UAH", "")),
+      quantity: parseInt(card.find(".product-quantity").text()),
+    };
+    addToCart(product);
+  });
+
+  // 2. [ВИПРАВЛЕНО] Додавання товару зі спливаючого вікна акції
+  // Використовуємо делегування, щоб уникнути конфліктів.
+  $(document).on('click', '.special-offer-add-to-cart-btn', function() {
+      const card = $(this).closest('.special-offer-card');
+      const productName = card.find('.special-offer-product-name').text();
+      const productPriceText = card.find('.special-offer-price-new').text();
+      const productPrice = parseFloat(productPriceText.replace(' UAH', ''));
+      
+      if (productName && !isNaN(productPrice)) {
+          const product = {
+              name: productName,
+              price: productPrice,
+              quantity: 1,
+          };
+          addToCart(product);
+      } else {
+          console.error("Could not add special offer product. Name or Price is missing.", { productName, productPriceText });
+      }
+  });
+
+  // 3. [ВИПРАВЛЕНО] Зміна кількості товару в кошику
+  // Використовуємо делегування, щоб обробник не дублювався при оновленні кошика.
   $(document).on('click', '.product-quantity-btn', function() {
     const productName = $(this).data("name");
     const action = $(this).data("action");
@@ -827,20 +842,11 @@ $(document).ready(function () {
     }
   });
 
-  $(".add-to-cart-btn").on("click", function () {
-    const card = $(this).closest(".product-card");
-    const product = {
-      name: card.find(".product-name").text(),
-      price: parseFloat(card.find(".product-price").text().replace(" UAH", "")),
-      quantity: parseInt(card.find(".product-quantity").text()),
-    };
-    addToCart(product);
-  });
-  
-  // Ініціалізація
+  // === ІНІЦІАЛІЗАЦІЯ ===
+  // Перше завантаження та відображення кошика при відкритті сторінки
   updateCart();
-  handleSpecialOfferPopup(); // Запускаємо функцію для активації логіки кнопок в поп-апі
 });
+
 
 
 
