@@ -731,6 +731,71 @@ function restoreCart(savedCartItems) {
 
 
 
+// === SPECIAL OFFER POPUP HANDLER ===
+document.addEventListener('DOMContentLoaded', function () {
+    const popup = document.querySelector('.popup_offer');
+    const openButtons = document.querySelectorAll('.add_card_open');
+    const popupClose = document.querySelector('.popup_close');
+
+    if (!popup || !popupClose || !openButtons.length) return;
+
+    openButtons.forEach(button => {
+        button.addEventListener('click', function (e) {
+            e.preventDefault();
+            const parentCard = button.closest('.product_card');
+            if (!parentCard) return;
+
+            // Extract base product data
+            const priceAttr = parentCard.querySelector('.price')?.getAttribute('price');
+            const basePrice = parseFloat(priceAttr?.replace(',', '.') || 0);
+            const quantity = parseInt(parentCard.querySelector('#quantity_card')?.value || 1);
+
+            // Sync popup inputs
+            const popupPriceEl = popup.querySelector('.popup_price');
+            const popupQuantityInput = popup.querySelector('.popup_quantity');
+            const popupCheckboxes = popup.querySelectorAll('input[type="checkbox"][price_add]');
+
+            if (popupPriceEl && popupQuantityInput) {
+                popupQuantityInput.value = quantity;
+                popupPriceEl.setAttribute('base-price', basePrice);
+                updatePopupPrice();
+            }
+
+            // Show popup
+            popup.style.display = 'flex';
+        });
+    });
+
+    // Close popup
+    popupClose.addEventListener('click', function () {
+        popup.style.display = 'none';
+    });
+
+    // Quantity change in popup
+    const popupQuantityInput = popup.querySelector('.popup_quantity');
+    popupQuantityInput?.addEventListener('input', updatePopupPrice);
+
+    // Checkbox change in popup
+    const popupCheckboxes = popup.querySelectorAll('input[type="checkbox"][price_add]');
+    popupCheckboxes.forEach(cb => cb.addEventListener('change', updatePopupPrice));
+
+    function updatePopupPrice() {
+        const priceEl = popup.querySelector('.popup_price');
+        const base = parseFloat(priceEl?.getAttribute('base-price')) || 0;
+        let totalPricePerUnit = base;
+
+        popupCheckboxes.forEach(cb => {
+            if (cb.checked) {
+                totalPricePerUnit += parseFloat(cb.getAttribute('price_add') || 0);
+            }
+        });
+
+        const quantity = parseInt(popupQuantityInput.value || 1);
+        const total = (totalPricePerUnit * quantity).toFixed(2);
+
+        priceEl.textContent = `${total} ₴`;
+    }
+});
 
 
 
