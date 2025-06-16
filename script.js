@@ -733,67 +733,246 @@ function restoreCart(savedCartItems) {
 
 // === SPECIAL OFFER POPUP HANDLER ===
 document.addEventListener('DOMContentLoaded', function () {
-    const popup = document.querySelector('.popup_offer');
+    const popup = document.querySelector('.container-pop_up');
     const openButtons = document.querySelectorAll('.add_card_open');
-    const popupClose = document.querySelector('.popup_close');
+    const closeButton = popup?.querySelector('.close_form');
+    const popupCards = popup?.querySelectorAll('.pop_up-card');
 
-    if (!popup || !popupClose || !openButtons.length) return;
+    if (!popup || !closeButton || !openButtons.length || !popupCards.length) return;
 
+    let originalProductData = {};
+
+    // Open popup handler
     openButtons.forEach(button => {
         button.addEventListener('click', function (e) {
             e.preventDefault();
-            const parentCard = button.closest('.product_card');
+            
+            // Get the parent product card
+            const parentCard = button.closest('.product_card') || button.closest('[class*="product"]');
             if (!parentCard) return;
 
-            // Extract base product data
-            const priceAttr = parentCard.querySelector('.price')?.getAttribute('price');
-            const basePrice = parseFloat(priceAttr?.replace(',', '.') || 0);
-            const quantity = parseInt(parentCard.querySelector('#quantity_card')?.value || 1);
+            // Extract base product data from the main product page
+            const priceElement = parentCard.querySelector('.price:not(.price_slider)');
+            const quantityInput = parentCard.querySelector('#quantity_card');
+            const productTitle = parentCard.querySelector('.product_title:not(.product_title-slider_test)');
+            
+            if (!priceElement || !quantityInput || !productTitle) return;
 
-            // Sync popup inputs
-            const popupPriceEl = popup.querySelector('.popup_price');
-            const popupQuantityInput = popup.querySelector('.popup_quantity');
-            const popupCheckboxes = popup.querySelectorAll('input[type="checkbox"][price_add]');
+            // Store original product data
+            const basePrice = parseFloat(priceElement.getAttribute('price')?.replace(',', '.') || 0);
+            const currentQuantity = parseInt(quantityInput.value || 1);
+            const productName = productTitle.textContent.trim();
+            
+            // Get selected add-ons and their prices
+            const selectedAddons = [];
+            let addonsPriceTotal = 0;
+            document.querySelectorAll('input[type="checkbox"][price_add]:checked').forEach(checkbox => {
+                const addonPrice = parseFloat(checkbox.getAttribute('price_add') || 0);
+                const addonName = checkbox.nextElementSibling?.textContent?.trim() || '';
+                selectedAddons.push({ name: addonName, price: addonPrice });
+                addonsPriceTotal += addonPrice;
+            });
 
-            if (popupPriceEl && popupQuantityInput) {
-                popupQuantityInput.value = quantity;
-                popupPriceEl.setAttribute('base-price', basePrice);
-                updatePopupPrice();
-            }
+            originalProductData = {
+                basePrice: basePrice,
+                quantity: currentQuantity,
+                productName: productName,
+                selectedAddons: selectedAddons,
+                addonsPriceTotal: addonsPriceTotal,
+                totalPricePerUnit: basePrice + addonsPriceTotal
+            };
 
+            // Sync popup data with original product
+            syncPopupWithProduct();
+            
             // Show popup
             popup.style.display = 'flex';
+            document.body.style.overflow = 'hidden'; // Prevent background scrolling
         });
     });
 
-    // Close popup
-    popupClose.addEventListener('click', function () {
+    // Close popup handler
+    closeButton.addEventListener('click', function (e) {
+        e.preventDefault();
         popup.style.display = 'none';
+        document.body.style.overflow = ''; // Restore scrolling
     });
 
-    // Quantity change in popup
-    const popupQuantityInput = popup.querySelector('.popup_quantity');
-    popupQuantityInput?.addEventListener('input', updatePopupPrice);
+    // Close popup when clicking outside
+    popup.addEventListener('click', function (e) {
+        if (e.target === popup) {
+            popup.style.display = 'none';
+            document.body.style.overflow = '';
+        }
+    });
 
-    // Checkbox change in popup
-    const popupCheckboxes = popup.querySelectorAll('input[type="checkbox"][price_add]');
-    popupCheckboxes.forEach(cb => cb.addEventListener('change', updatePopupPrice));
+    // Function to sync popup cards with original product data
+    function syncPopupWithProduct() {
+        popupCards.forEach((card, index) => {
+            const quantityInput = card.querySelector('.quantity');
+            const priceElement = card.querySelector('.price');
+            const plusButton = card.querySelector('.plus');
+            const minusButton = card.querySelector('.minus');
+            const addToCartButton = card.querySelector('.add_card_pop_up');
 
-    function updatePopupPrice() {
-        const priceEl = popup.querySelector('.popup_price');
-        const base = parseFloat(priceEl?.getAttribute('base-price')) || 0;
-        let totalPricePerUnit = base;
+            if (!quantityInput || !priceElement) return;
 
-        popupCheckboxes.forEach(cb => {
-            if (cb.checked) {
-                totalPricePerUnit += parseFloat(cb.getAttribute('price_add') || 0);
+            // Set initial quantity
+            quantityInput.value = originalProductData.quantity;
+
+            // Calculate and set price based on card type
+            let cardPrice;
+            if (index === 0) {
+                // First card - combo menu (assuming higher price from HTML)
+                const comboBasePrice = parseFloat(priceElement.getAttribute('price') || 275);
+                cardPrice = (comboBasePrice + originalProductData.addonsPriceTotal) * originalProductData.quantity;
+            } else {
+                // Second card - single item
+                cardPrice = originalProductData.totalPricePerUnit * originalProductData.quantity;
             }
+
+            priceElement.textContent = `${formatPrice(cardPrice)} ₴`;
+            
+            // Store base prices for calculations
+            priceElement.setAttribute('data-base-price', 
+                index === 0 ? 
+                parseFloat(priceElement.getAttribute('price') || 275) + originalProductData.addonsPriceTotal :
+                originalProductData.totalPricePerUnit
+            );
+
+            // Setup quantity change handlers
+            setupPopupQuantityHandlers(card, quantityInput, priceElement, plusButton, minusButton);
+            
+            // Setup add to cart handler
+            setupPopupAddToCartHandler(card, addToCartButton, index);
+        });
+    }
+
+    // Setup quantity change handlers for popup cards
+    function setupPopupQuantityHandlers(card, quantityInput, priceElement, plusButton, minusButton) {
+        // Quantity input change
+        quantityInput.addEventListener('input', function() {
+            let newQuantity = parseInt(this.value) || 1;
+            if (newQuantity < 1) {
+                newQuantity = 1;
+                this.value = 1;
+            }
+            if (newQuantity > 100) {
+                newQuantity = 100;
+                this.value = 100;
+            }
+            updatePopupCardPrice(priceElement, newQuantity);
         });
 
-        const quantity = parseInt(popupQuantityInput.value || 1);
-        const total = (totalPricePerUnit * quantity).toFixed(2);
+        // Plus button
+        if (plusButton) {
+            plusButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                let currentQuantity = parseInt(quantityInput.value) || 1;
+                if (currentQuantity < 100) {
+                    currentQuantity++;
+                    quantityInput.value = currentQuantity;
+                    updatePopupCardPrice(priceElement, currentQuantity);
+                }
+            });
+        }
 
-        priceEl.textContent = `${total} ₴`;
+        // Minus button
+        if (minusButton) {
+            minusButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                let currentQuantity = parseInt(quantityInput.value) || 1;
+                if (currentQuantity > 1) {
+                    currentQuantity--;
+                    quantityInput.value = currentQuantity;
+                    updatePopupCardPrice(priceElement, currentQuantity);
+                }
+            });
+        }
+    }
+
+    // Update popup card price based on quantity
+    function updatePopupCardPrice(priceElement, quantity) {
+        const basePricePerUnit = parseFloat(priceElement.getAttribute('data-base-price')) || 0;
+        const totalPrice = basePricePerUnit * quantity;
+        priceElement.textContent = `${formatPrice(totalPrice)} ₴`;
+    }
+
+    // Setup add to cart handler for popup cards
+    function setupPopupAddToCartHandler(card, addToCartButton, cardIndex) {
+        if (!addToCartButton) return;
+
+        addToCartButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const quantityInput = card.querySelector('.quantity');
+            const priceElement = card.querySelector('.price');
+            const cardImage = card.querySelector('.pop_up-card-img');
+            const cardTitle = card.querySelector('.h3_title');
+            
+            if (!quantityInput || !priceElement || !cardImage || !cardTitle) return;
+
+            const quantity = parseInt(quantityInput.value) || 1;
+            const basePricePerUnit = parseFloat(priceElement.getAttribute('data-base-price')) || 0;
+            const productName = cardTitle.textContent.trim();
+            const productImage = cardImage.src;
+            
+            // Create ingredients list for the item
+            let ingredients = '';
+            if (cardIndex === 0) {
+                // Combo menu - include original addons
+                ingredients = originalProductData.selectedAddons.map(addon => addon.name).join('<br>') || 'Комбо меню';
+            } else {
+                // Single item - include original addons
+                ingredients = originalProductData.selectedAddons.map(addon => addon.name).join('<br>') || 'Додатковий товар';
+            }
+
+            // Add to cart using existing cart system
+            const itemId = 'popup_item_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            
+            // Check for existing item
+            const existingItem = findExistingCartItem(productName, ingredients);
+            
+            if (existingItem) {
+                // Update existing item
+                const existingQuantityInput = existingItem.find('.quantity_cart');
+                const currentQuantity = parseInt(existingQuantityInput.val(), 10);
+                const newQuantity = currentQuantity + quantity;
+                existingQuantityInput.val(newQuantity);
+                updateCartPrice(existingItem, newQuantity);
+            } else {
+                // Create new cart item
+                const cartItem = createCartItemHTML({
+                    itemId: itemId,
+                    image: productImage,
+                    name: productName,
+                    ingredients: ingredients,
+                    quantity: quantity,
+                    pricePerUnit: basePricePerUnit,
+                    packaging: '0',
+                    isWeightBased: false,
+                    weightStep: 1,
+                    minWeight: 1,
+                    referenceWeight: 1,
+                    unitLabel: 'шт'
+                });
+                
+                cartItemsContainer.append(cartItem);
+            }
+
+            saveCart();
+            updateCartNumber();
+
+            // Close popup
+            popup.style.display = 'none';
+            document.body.style.overflow = '';
+
+            // Visual feedback
+            addToCartButton.textContent = 'Додано в кошик';
+            setTimeout(function() {
+                addToCartButton.textContent = 'Додати в кошик';
+            }, 2000);
+        });
     }
 });
 
