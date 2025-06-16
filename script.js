@@ -731,251 +731,116 @@ function restoreCart(savedCartItems) {
 
 
 
-// === SPECIAL OFFER POPUP HANDLER ===
-document.addEventListener('DOMContentLoaded', function () {
-    const popup = document.querySelector('.container-pop_up');
-    const openButtons = document.querySelectorAll('.add_card_open');
-    const closeButton = popup?.querySelector('.close_form');
-    const popupCards = popup?.querySelectorAll('.pop_up-card');
+$(document).ready(function () {
+  let cart = JSON.parse(localStorage.getItem("cart")) || [];
 
-    if (!popup || !closeButton || !openButtons.length || !popupCards.length) return;
+  function updateLocalStorage() {
+    localStorage.setItem("cart", JSON.stringify(cart));
+  }
 
-    let originalProductData = {};
+  function addToCart(product) {
+    const existingProduct = cart.find((item) => item.name === product.name);
+    if (existingProduct) {
+      existingProduct.quantity += product.quantity;
+    } else {
+      cart.push(product);
+    }
+    updateLocalStorage();
+    updateCart();
+  }
 
-    // Open popup handler
-    openButtons.forEach(button => {
-        button.addEventListener('click', function (e) {
-            e.preventDefault();
-            
-            // Get the parent product card
-            const parentCard = button.closest('.product_card') || button.closest('[class*="product"]');
-            if (!parentCard) return;
+  function updateCart() {
+    const cartItemsContainer = $(".cart-items");
+    cartItemsContainer.empty();
+    let total = 0;
 
-            // Extract base product data from the main product page
-            const priceElement = parentCard.querySelector('.price:not(.price_slider)');
-            const quantityInput = parentCard.querySelector('#quantity_card');
-            const productTitle = parentCard.querySelector('.product_title:not(.product_title-slider_test)');
-            
-            if (!priceElement || !quantityInput || !productTitle) return;
+    if (cart.length === 0) {
+      $(".cart-empty-state").css("display", "flex");
+      $(".cart-total-price, .cart-order-btn-wrapper").css("display", "none");
+    } else {
+      $(".cart-empty-state").css("display", "none");
+      $(".cart-total-price, .cart-order-btn-wrapper").css("display", "block");
 
-            // Store original product data
-            const basePrice = parseFloat(priceElement.getAttribute('price')?.replace(',', '.') || 0);
-            const currentQuantity = parseInt(quantityInput.value || 1);
-            const productName = productTitle.textContent.trim();
-            
-            // Get selected add-ons and their prices
-            const selectedAddons = [];
-            let addonsPriceTotal = 0;
-            document.querySelectorAll('input[type="checkbox"][price_add]:checked').forEach(checkbox => {
-                const addonPrice = parseFloat(checkbox.getAttribute('price_add') || 0);
-                const addonName = checkbox.nextElementSibling?.textContent?.trim() || '';
-                selectedAddons.push({ name: addonName, price: addonPrice });
-                addonsPriceTotal += addonPrice;
-            });
+      cart.forEach((item) => {
+        const cartItemHTML = `
+          <div class="cart-item">
+            <div class="cart-item-info">
+              <div class="cart-item-name">${item.name}</div>
+              <div class="cart-item-price">${(item.price * item.quantity).toFixed(2)} UAH</div>
+            </div>
+            <div class="product-quantity-wrapper">
+              <button class="product-quantity-btn" data-name="${item.name}" data-action="decrease">-</button>
+              <div class="product-quantity">${item.quantity}</div>
+              <button class="product-quantity-btn" data-name="${item.name}" data-action="increase">+</button>
+            </div>
+          </div>`;
+        cartItemsContainer.append(cartItemHTML);
+        total += item.price * item.quantity;
+      });
+    }
 
-            originalProductData = {
-                basePrice: basePrice,
-                quantity: currentQuantity,
-                productName: productName,
-                selectedAddons: selectedAddons,
-                addonsPriceTotal: addonsPriceTotal,
-                totalPricePerUnit: basePrice + addonsPriceTotal
-            };
+    $(".total-price").text(total.toFixed(2));
+  }
+  
+  // === SPECIAL OFFER POPUP HANDLER ===
+  // Ця функція тепер відповідає ТІЛЬКИ за логіку додавання товару з картки
+  function handleSpecialOfferPopup() {
+      // Використовуємо .off().on() щоб уникнути подвійного призначення обробника
+      $('.special-offer-add-to-cart-btn').off('click').on('click', function() {
+          const card = $(this).closest('.special-offer-card');
+          const productName = card.find('.special-offer-product-name').text();
+          const productPrice = parseFloat(card.find('.special-offer-price-new').text().replace(' UAH', ''));
+          
+          if (productName && !isNaN(productPrice)) {
+              const product = {
+                  name: productName,
+                  price: productPrice,
+                  quantity: 1,
+              };
+              addToCart(product);
+              // Закриваємо модальне вікно (якщо це потрібно зробити програмно)
+              // Наприклад, якщо у вас є кнопка закриття з класом .close-popup
+              // $('.close-popup').trigger('click'); 
+          }
+      });
+  }
 
-            // Sync popup data with original product
-            syncPopupWithProduct();
-            
-            // Show popup
-            popup.style.display = 'flex';
-            document.body.style.overflow = 'hidden'; // Prevent background scrolling
-        });
-    });
+  // === EVENT HANDLERS ===
+  
+  // Делегований обробник для кнопок +/- в кошику
+  $(document).on('click', '.product-quantity-btn', function() {
+    const productName = $(this).data("name");
+    const action = $(this).data("action");
+    const product = cart.find((item) => item.name === productName);
 
-    // Close popup handler
-    closeButton.addEventListener('click', function (e) {
-        e.preventDefault();
-        popup.style.display = 'none';
-        document.body.style.overflow = ''; // Restore scrolling
-    });
-
-    // Close popup when clicking outside
-    popup.addEventListener('click', function (e) {
-        if (e.target === popup) {
-            popup.style.display = 'none';
-            document.body.style.overflow = '';
+    if (product) {
+      if (action === "increase") {
+        product.quantity++;
+      } else if (action === "decrease") {
+        product.quantity--;
+        if (product.quantity <= 0) {
+          cart = cart.filter((item) => item.name !== productName);
         }
-    });
-
-    // Function to sync popup cards with original product data
-    function syncPopupWithProduct() {
-        popupCards.forEach((card, index) => {
-            const quantityInput = card.querySelector('.quantity');
-            const priceElement = card.querySelector('.price');
-            const plusButton = card.querySelector('.plus');
-            const minusButton = card.querySelector('.minus');
-            const addToCartButton = card.querySelector('.add_card_pop_up');
-
-            if (!quantityInput || !priceElement) return;
-
-            // Set initial quantity
-            quantityInput.value = originalProductData.quantity;
-
-            // Calculate and set price based on card type
-            let cardPrice;
-            if (index === 0) {
-                // First card - combo menu (assuming higher price from HTML)
-                const comboBasePrice = parseFloat(priceElement.getAttribute('price') || 275);
-                cardPrice = (comboBasePrice + originalProductData.addonsPriceTotal) * originalProductData.quantity;
-            } else {
-                // Second card - single item
-                cardPrice = originalProductData.totalPricePerUnit * originalProductData.quantity;
-            }
-
-            priceElement.textContent = `${formatPrice(cardPrice)} ₴`;
-            
-            // Store base prices for calculations
-            priceElement.setAttribute('data-base-price', 
-                index === 0 ? 
-                parseFloat(priceElement.getAttribute('price') || 275) + originalProductData.addonsPriceTotal :
-                originalProductData.totalPricePerUnit
-            );
-
-            // Setup quantity change handlers
-            setupPopupQuantityHandlers(card, quantityInput, priceElement, plusButton, minusButton);
-            
-            // Setup add to cart handler
-            setupPopupAddToCartHandler(card, addToCartButton, index);
-        });
+      }
+      updateLocalStorage();
+      updateCart();
     }
+  });
 
-    // Setup quantity change handlers for popup cards
-    function setupPopupQuantityHandlers(card, quantityInput, priceElement, plusButton, minusButton) {
-        // Quantity input change
-        quantityInput.addEventListener('input', function() {
-            let newQuantity = parseInt(this.value) || 1;
-            if (newQuantity < 1) {
-                newQuantity = 1;
-                this.value = 1;
-            }
-            if (newQuantity > 100) {
-                newQuantity = 100;
-                this.value = 100;
-            }
-            updatePopupCardPrice(priceElement, newQuantity);
-        });
-
-        // Plus button
-        if (plusButton) {
-            plusButton.addEventListener('click', function(e) {
-                e.preventDefault();
-                let currentQuantity = parseInt(quantityInput.value) || 1;
-                if (currentQuantity < 100) {
-                    currentQuantity++;
-                    quantityInput.value = currentQuantity;
-                    updatePopupCardPrice(priceElement, currentQuantity);
-                }
-            });
-        }
-
-        // Minus button
-        if (minusButton) {
-            minusButton.addEventListener('click', function(e) {
-                e.preventDefault();
-                let currentQuantity = parseInt(quantityInput.value) || 1;
-                if (currentQuantity > 1) {
-                    currentQuantity--;
-                    quantityInput.value = currentQuantity;
-                    updatePopupCardPrice(priceElement, currentQuantity);
-                }
-            });
-        }
-    }
-
-    // Update popup card price based on quantity
-    function updatePopupCardPrice(priceElement, quantity) {
-        const basePricePerUnit = parseFloat(priceElement.getAttribute('data-base-price')) || 0;
-        const totalPrice = basePricePerUnit * quantity;
-        priceElement.textContent = `${formatPrice(totalPrice)} ₴`;
-    }
-
-    // Setup add to cart handler for popup cards
-    function setupPopupAddToCartHandler(card, addToCartButton, cardIndex) {
-        if (!addToCartButton) return;
-
-        addToCartButton.addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            const quantityInput = card.querySelector('.quantity');
-            const priceElement = card.querySelector('.price');
-            const cardImage = card.querySelector('.pop_up-card-img');
-            const cardTitle = card.querySelector('.h3_title');
-            
-            if (!quantityInput || !priceElement || !cardImage || !cardTitle) return;
-
-            const quantity = parseInt(quantityInput.value) || 1;
-            const basePricePerUnit = parseFloat(priceElement.getAttribute('data-base-price')) || 0;
-            const productName = cardTitle.textContent.trim();
-            const productImage = cardImage.src;
-            
-            // Create ingredients list for the item
-            let ingredients = '';
-            if (cardIndex === 0) {
-                // Combo menu - include original addons
-                ingredients = originalProductData.selectedAddons.map(addon => addon.name).join('<br>') || 'Комбо меню';
-            } else {
-                // Single item - include original addons
-                ingredients = originalProductData.selectedAddons.map(addon => addon.name).join('<br>') || 'Додатковий товар';
-            }
-
-            // Add to cart using existing cart system
-            const itemId = 'popup_item_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-            
-            // Check for existing item
-            const existingItem = findExistingCartItem(productName, ingredients);
-            
-            if (existingItem) {
-                // Update existing item
-                const existingQuantityInput = existingItem.find('.quantity_cart');
-                const currentQuantity = parseInt(existingQuantityInput.val(), 10);
-                const newQuantity = currentQuantity + quantity;
-                existingQuantityInput.val(newQuantity);
-                updateCartPrice(existingItem, newQuantity);
-            } else {
-                // Create new cart item
-                const cartItem = createCartItemHTML({
-                    itemId: itemId,
-                    image: productImage,
-                    name: productName,
-                    ingredients: ingredients,
-                    quantity: quantity,
-                    pricePerUnit: basePricePerUnit,
-                    packaging: '0',
-                    isWeightBased: false,
-                    weightStep: 1,
-                    minWeight: 1,
-                    referenceWeight: 1,
-                    unitLabel: 'шт'
-                });
-                
-                cartItemsContainer.append(cartItem);
-            }
-
-            saveCart();
-            updateCartNumber();
-
-            // Close popup
-            popup.style.display = 'none';
-            document.body.style.overflow = '';
-
-            // Visual feedback
-            addToCartButton.textContent = 'Додано в кошик';
-            setTimeout(function() {
-                addToCartButton.textContent = 'Додати в кошик';
-            }, 2000);
-        });
-    }
+  $(".add-to-cart-btn").on("click", function () {
+    const card = $(this).closest(".product-card");
+    const product = {
+      name: card.find(".product-name").text(),
+      price: parseFloat(card.find(".product-price").text().replace(" UAH", "")),
+      quantity: parseInt(card.find(".product-quantity").text()),
+    };
+    addToCart(product);
+  });
+  
+  // Ініціалізація
+  updateCart();
+  handleSpecialOfferPopup(); // Запускаємо функцію для активації логіки кнопок в поп-апі
 });
-
 
 
 
