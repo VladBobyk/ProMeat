@@ -731,86 +731,91 @@ function restoreCart(savedCartItems) {
 
 
 
-// === PRODUCT HANDLERS ===
-const productContainer = document.querySelector(".cart-list");
+// === EVENT HANDLERS (IMPROVED) ===
+$(document).ready(function () {
+    cartItemsContainer = $('#cart-items');
+    savedCartItems = JSON.parse(localStorage.getItem('cartItems')) || [];
 
-function updateCartPrice() {
-  let total = 0;
-  document.querySelectorAll(".cart-item").forEach((item) => {
-    const price = parseFloat(item.querySelector(".product-price span").textContent.replace("$", ""));
-    const quantity = parseInt(item.querySelector(".quantity-number").textContent);
-    total += price * quantity;
-  });
-  document.querySelector(".total-price").textContent = `$${total.toFixed(2)}`;
-}
+    restoreCart(savedCartItems);
 
-function attachQuantityListeners(cartItem) {
-  const minusBtn = cartItem.querySelector(".quantity-minus");
-  const plusBtn = cartItem.querySelector(".quantity-plus");
-  const quantityEl = cartItem.querySelector(".quantity-number");
+    // Remove all previous event handlers to prevent conflicts
+    $(document).off('click', '.add_card');
+    $(document).off('click', '.add_card_slider');
+    $(document).off('click', '.add_card_slider_mobile');
+    $(document).off('click', '.add-to-cart'); // ⛔ видалено обробник загального add-to-cart
 
-  minusBtn.onclick = (e) => {
-    e.stopPropagation();
-    let quantity = parseInt(quantityEl.textContent);
-    if (quantity > 1) {
-      quantityEl.textContent = quantity - 1;
-      updateCartPrice();
-    }
-  };
+    // Main product page "Add to Cart" button (with exclusions)
+    $(document).on('click', '.add_card', function (e) {
+        if (!$(this).hasClass('add_card_slider') && !$(this).hasClass('add_card_slider_mobile')) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            addToCart();
+        }
+    });
 
-  plusBtn.onclick = (e) => {
-    e.stopPropagation();
-    let quantity = parseInt(quantityEl.textContent);
-    quantityEl.textContent = quantity + 1;
-    updateCartPrice();
-  };
-}
+    // Slider buttons (specific handlers)
+    $(document).on('click', '.add_card_slider', function (e) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        addSliderProductToCart(this);
+    });
 
-function createCartItem(productName, productPrice) {
-  const cartItem = document.createElement("div");
-  cartItem.classList.add("cart-item");
+    $(document).on('click', '.add_card_slider_mobile', function (e) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        addSliderProductToCart(this);
+    });
 
-  cartItem.innerHTML = `
-    <div class="product-name">${productName}</div>
-    <div class="product-price"><span>${productPrice}</span></div>
-    <div class="quantity-control">
-      <button class="quantity-minus">-</button>
-      <span class="quantity-number">1</span>
-      <button class="quantity-plus">+</button>
-    </div>
-  `;
+    // Input handler for quantity updates
+    $(document).on('input', '.quantity_cart', function() {
+        var $item = $(this).closest('.cart-item');
+        var isWeightBased = $item.data('weight-based') === true;
+        var newQuantity = parseInt($(this).val(), 10) || 0;
+        
+        if (isWeightBased) {
+            var weightStep = parseInt($item.data('weight-step')) || 100;
+            var minWeight = parseInt($item.data('min-weight')) || weightStep;
 
-  attachQuantityListeners(cartItem);
-  return cartItem;
-}
+            if (newQuantity < minWeight) {
+                newQuantity = minWeight;
+                $(this).val(minWeight);
+            }
 
-// === HANDLERS FOR STANDARD ADD BUTTONS ===
-document.querySelectorAll(".add-to-cart").forEach((btn) => {
-  btn.addEventListener("click", (e) => {
-    const productCard = e.target.closest(".product-card");
-    const name = productCard.querySelector(".product-title").textContent;
-    const price = productCard.querySelector(".product-price span").textContent;
+            var remainder = newQuantity % weightStep;
+            if (remainder !== 0) {
+                newQuantity = Math.round(newQuantity / weightStep) * weightStep;
+                $(this).val(newQuantity);
+            }
+        } else {
+            if (newQuantity < 1) {
+                newQuantity = 1;
+                $(this).val(1);
+            }
+        }
 
-    const cartItem = createCartItem(name, price);
-    productContainer.appendChild(cartItem);
-    updateCartPrice();
-  });
+        updateCartPrice($item, newQuantity);
+        saveCart();
+        updateCartTotal();
+    });
+
+    // Remove from cart
+    $(document).on('click', '.remove-from-cart', function () {
+        removeFromCart(this);
+    });
+
+    // Quantity plus/minus buttons
+    $(document).on('click', '.minus_cart', function (e) {
+        e.preventDefault();
+        var cartItem = $(this).closest('.cart-item');
+        decreaseQuantity(cartItem);
+    });
+
+    $(document).on('click', '.plus_cart', function (e) {
+        e.preventDefault();
+        var cartItem = $(this).closest('.cart-item');
+        increaseQuantity(cartItem);
+    });
 });
-
-// === HANDLER FOR POPUP ADD BUTTON ONLY ===
-const popupAddBtn = document.querySelector(".popup .add-to-cart");
-if (popupAddBtn) {
-  popupAddBtn.addEventListener("click", (e) => {
-    e.stopPropagation();
-    const popup = e.target.closest(".popup");
-    const name = popup.querySelector(".product-title").textContent;
-    const price = popup.querySelector(".product-price span").textContent;
-
-    const cartItem = createCartItem(name, price);
-    productContainer.appendChild(cartItem);
-    updateCartPrice();
-  });
-}
 
 
 
