@@ -734,7 +734,6 @@ function restoreCart(savedCartItems) {
 // === SPECIAL OFFER POPUP HANDLER ===
 $(document).ready(function () {
   let cart = JSON.parse(localStorage.getItem("cart")) || [];
-  let currentProductCard = null;
 
   function updateLocalStorage() {
     localStorage.setItem("cart", JSON.stringify(cart));
@@ -780,49 +779,72 @@ $(document).ready(function () {
         total += item.price * item.quantity;
       });
     }
-
     $(".total-price").text(total.toFixed(2));
   }
-  
-  // Прив'язка до кнопки, яка відкриває попап
+
+  // --- ЛОГІКА СПЛИВАЮЧОГО ВІКНА ---
+
+  // 1. Коли користувач клікає, щоб ВІДКРИТИ попап
   $(".add-to-cart-btn").on("click", function () {
-    currentProductCard = $(this).closest(".product-card");
-    const quantity = parseInt(currentProductCard.find(".product-quantity-value").text());
-    // Встановлюємо початкову кількість в попапі
-    $('.special-offer-product-quantity').text(quantity);
+    // Знаходимо картку товару, на яку клікнули
+    const productCard = $(this).closest(".product-card");
+    
+    // Збираємо дані про товар
+    const productName = productCard.find(".product-name").text();
+    const productPrice = parseFloat(productCard.find(".product-price").text().replace(" UAH", ""));
+    const initialQuantity = parseInt(productCard.find(".product-quantity-value").text());
+    
+    // Знаходимо сам попап
+    const popup = $(".special-offer-wrapper"); // !!! Перевірте цей клас
+    
+    // Зберігаємо дані прямо в DOM-елементі попапу
+    popup.data('productName', productName);
+    popup.data('productPrice', productPrice);
+    
+    // Встановлюємо початкову кількість у лічильнику попапу
+    popup.find('.special-offer-product-quantity').text(initialQuantity);
   });
   
-  // === [ВИПРАВЛЕНО] Обробники для кнопок +/- у спливаючому вікні ===
-  // Використовуємо делегування подій, щоб уникнути їх дублювання
+  // 2. Зміна кількості +/- УСЕРЕДИНІ попапу (вирішує проблему подвійного кліку)
+  // Цей обробник подій тепер прив'язаний один раз і назавжди
   $(document).on('click', '.special-offer-quantity-btn', function() {
-    const action = $(this).data('action');
     const quantityEl = $('.special-offer-product-quantity');
     let quantity = parseInt(quantityEl.text());
-    
-    if(action === 'increase') {
+    const action = $(this).data('action');
+
+    if (action === 'increase') {
       quantity++;
     } else if (action === 'decrease' && quantity > 1) {
       quantity--;
     }
-    
     quantityEl.text(quantity);
   });
-
-  // Додавання товару з попапу в кошик
+  
+  // 3. Коли користувач клікає "Додати", щоб ДОДАТИ товар з попапу
   $('.special-offer-add-to-cart-btn').on('click', function() {
-    if (currentProductCard) {
-      const quantity = parseInt($('.special-offer-product-quantity').text());
+    const popup = $(".special-offer-wrapper"); // !!! Перевірте цей клас
+    
+    // Витягуємо дані, збережені раніше в попапі
+    const productName = popup.data('productName');
+    const productPrice = popup.data('productPrice');
+    const quantity = parseInt(popup.find('.special-offer-product-quantity').text());
+
+    if (productName && productPrice) {
       const product = {
-        name: currentProductCard.find(".product-name").text(),
-        price: parseFloat(currentProductCard.find(".product-price").text().replace(" UAH", "")),
+        name: productName,
+        price: productPrice,
         quantity: quantity,
       };
       addToCart(product);
-      // Тут можна додати логіку для закриття попапу, якщо потрібно
+      // Якщо вам потрібно закрити попап після додавання,
+      // тут має бути код, що імітує клік на кнопку закриття
+      // наприклад: popup.find('.close-button').click();
+    } else {
+      console.error("Не вдалося додати товар: дані не знайдено в data-атрибутах попапу.");
     }
   });
 
-  // Зміна кількості товару в самому кошику (цей код у вас був правильним)
+  // --- ЛОГІКА КОШИКА (залишається без змін) ---
   $(document).on('click', '.product-quantity-btn', function() {
     const productName = $(this).data("name");
     const action = $(this).data("action");
@@ -842,9 +864,9 @@ $(document).ready(function () {
     }
   });
 
+  // Перше завантаження кошика
   updateCart();
 });
-
 
 
 
