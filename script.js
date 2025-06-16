@@ -811,8 +811,8 @@ document.addEventListener('DOMContentLoaded', function () {
         popupCards.forEach((card, index) => {
             const quantityInput = card.querySelector('.quantity');
             const priceElement = card.querySelector('.price');
-            const plusButton = card.querySelector('.plus');
-            const minusButton = card.querySelector('.minus');
+            const plusButton = card.querySelector('.plus_card-pop_up');
+            const minusButton = card.querySelector('.minus_card-pop_up');
             const addToCartButton = card.querySelector('.add_card_pop_up');
 
             if (!quantityInput || !priceElement) return;
