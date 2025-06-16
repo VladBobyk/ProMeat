@@ -731,92 +731,250 @@ function restoreCart(savedCartItems) {
 
 
 
-// === EVENT HANDLERS (IMPROVED) ===
-$(document).ready(function () {
-    cartItemsContainer = $('#cart-items');
-    savedCartItems = JSON.parse(localStorage.getItem('cartItems')) || [];
+// === SPECIAL OFFER POPUP HANDLER ===
+document.addEventListener('DOMContentLoaded', function () {
+    const popup = document.querySelector('.container-pop_up');
+    const openButtons = document.querySelectorAll('.add_card_open');
+    const closeButton = popup?.querySelector('.close_form');
+    const popupCards = popup?.querySelectorAll('.pop_up-card');
 
-    restoreCart(savedCartItems);
+    if (!popup || !closeButton || !openButtons.length || !popupCards.length) return;
 
-    // Remove all previous event handlers to prevent conflicts
-    $(document).off('click', '.add_card');
-    $(document).off('click', '.add_card_slider');
-    $(document).off('click', '.add_card_slider_mobile');
-    $(document).off('click', '.add-to-cart'); // ⛔ видалено обробник загального add-to-cart
+    let originalProductData = {};
 
-    // Main product page "Add to Cart" button (with exclusions)
-    $(document).on('click', '.add_card', function (e) {
-        if (!$(this).hasClass('add_card_slider') && !$(this).hasClass('add_card_slider_mobile')) {
+    // Open popup handler
+    openButtons.forEach(button => {
+        button.addEventListener('click', function (e) {
             e.preventDefault();
-            e.stopImmediatePropagation();
-            addToCart();
+            
+            // Get the parent product card
+            const parentCard = button.closest('.product_card') || button.closest('[class*="product"]');
+            if (!parentCard) return;
+
+            // Extract base product data from the main product page
+            const priceElement = parentCard.querySelector('.price:not(.price_slider)');
+            const quantityInput = parentCard.querySelector('#quantity_card');
+            const productTitle = parentCard.querySelector('.product_title:not(.product_title-slider_test)');
+            
+            if (!priceElement || !quantityInput || !productTitle) return;
+
+            // Store original product data
+            const basePrice = parseFloat(priceElement.getAttribute('price')?.replace(',', '.') || 0);
+            const currentQuantity = parseInt(quantityInput.value || 1);
+            const productName = productTitle.textContent.trim();
+            
+            // Get selected add-ons and their prices
+            const selectedAddons = [];
+            let addonsPriceTotal = 0;
+            document.querySelectorAll('input[type="checkbox"][price_add]:checked').forEach(checkbox => {
+                const addonPrice = parseFloat(checkbox.getAttribute('price_add') || 0);
+                const addonName = checkbox.nextElementSibling?.textContent?.trim() || '';
+                selectedAddons.push({ name: addonName, price: addonPrice });
+                addonsPriceTotal += addonPrice;
+            });
+
+            originalProductData = {
+                basePrice: basePrice,
+                quantity: currentQuantity,
+                productName: productName,
+                selectedAddons: selectedAddons,
+                addonsPriceTotal: addonsPriceTotal,
+                totalPricePerUnit: basePrice + addonsPriceTotal
+            };
+
+            // Sync popup data with original product
+            syncPopupWithProduct();
+            
+            // Show popup
+            popup.style.display = 'flex';
+            document.body.style.overflow = 'hidden'; // Prevent background scrolling
+        });
+    });
+
+    // Close popup handler
+    closeButton.addEventListener('click', function (e) {
+        e.preventDefault();
+        popup.style.display = 'none';
+        document.body.style.overflow = ''; // Restore scrolling
+    });
+
+    // Close popup when clicking outside
+    popup.addEventListener('click', function (e) {
+        if (e.target === popup) {
+            popup.style.display = 'none';
+            document.body.style.overflow = '';
         }
     });
 
-    // Slider buttons (specific handlers)
-    $(document).on('click', '.add_card_slider', function (e) {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        addSliderProductToCart(this);
-    });
+    // Function to sync popup cards with original product data
+    function syncPopupWithProduct() {
+        popupCards.forEach((card, index) => {
+            const quantityInput = card.querySelector('.quantity');
+            const priceElement = card.querySelector('.price');
+            const plusButton = card.querySelector('.plus');
+            const minusButton = card.querySelector('.minus');
+            const addToCartButton = card.querySelector('.add_card_pop_up');
 
-    $(document).on('click', '.add_card_slider_mobile', function (e) {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        addSliderProductToCart(this);
-    });
+            if (!quantityInput || !priceElement) return;
 
-    // Input handler for quantity updates
-    $(document).on('input', '.quantity_cart', function() {
-        var $item = $(this).closest('.cart-item');
-        var isWeightBased = $item.data('weight-based') === true;
-        var newQuantity = parseInt($(this).val(), 10) || 0;
-        
-        if (isWeightBased) {
-            var weightStep = parseInt($item.data('weight-step')) || 100;
-            var minWeight = parseInt($item.data('min-weight')) || weightStep;
+            // Set initial quantity
+            quantityInput.value = originalProductData.quantity;
 
-            if (newQuantity < minWeight) {
-                newQuantity = minWeight;
-                $(this).val(minWeight);
+            // Calculate and set price based on card type
+            let cardPrice;
+            if (index === 0) {
+                // First card - combo menu (assuming higher price from HTML)
+                const comboBasePrice = parseFloat(priceElement.getAttribute('price') || 275);
+                cardPrice = (comboBasePrice + originalProductData.addonsPriceTotal) * originalProductData.quantity;
+            } else {
+                // Second card - single item
+                cardPrice = originalProductData.totalPricePerUnit * originalProductData.quantity;
             }
 
-            var remainder = newQuantity % weightStep;
-            if (remainder !== 0) {
-                newQuantity = Math.round(newQuantity / weightStep) * weightStep;
-                $(this).val(newQuantity);
-            }
-        } else {
+            priceElement.textContent = `${formatPrice(cardPrice)} ₴`;
+            
+            // Store base prices for calculations
+            priceElement.setAttribute('data-base-price', 
+                index === 0 ? 
+                parseFloat(priceElement.getAttribute('price') || 275) + originalProductData.addonsPriceTotal :
+                originalProductData.totalPricePerUnit
+            );
+
+            // Setup quantity change handlers
+            setupPopupQuantityHandlers(card, quantityInput, priceElement, plusButton, minusButton);
+            
+            // Setup add to cart handler
+            setupPopupAddToCartHandler(card, addToCartButton, index);
+        });
+    }
+
+    // Setup quantity change handlers for popup cards
+    function setupPopupQuantityHandlers(card, quantityInput, priceElement, plusButton, minusButton) {
+        // Quantity input change
+        quantityInput.addEventListener('input', function() {
+            let newQuantity = parseInt(this.value) || 1;
             if (newQuantity < 1) {
                 newQuantity = 1;
-                $(this).val(1);
+                this.value = 1;
             }
+            if (newQuantity > 100) {
+                newQuantity = 100;
+                this.value = 100;
+            }
+            updatePopupCardPrice(priceElement, newQuantity);
+        });
+
+        // Plus button
+        if (plusButton) {
+            plusButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                let currentQuantity = parseInt(quantityInput.value) || 1;
+                if (currentQuantity < 100) {
+                    currentQuantity++;
+                    quantityInput.value = currentQuantity;
+                    updatePopupCardPrice(priceElement, currentQuantity);
+                }
+            });
         }
 
-        updateCartPrice($item, newQuantity);
-        saveCart();
-        updateCartTotal();
-    });
+        // Minus button
+        if (minusButton) {
+            minusButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                let currentQuantity = parseInt(quantityInput.value) || 1;
+                if (currentQuantity > 1) {
+                    currentQuantity--;
+                    quantityInput.value = currentQuantity;
+                    updatePopupCardPrice(priceElement, currentQuantity);
+                }
+            });
+        }
+    }
 
-    // Remove from cart
-    $(document).on('click', '.remove-from-cart', function () {
-        removeFromCart(this);
-    });
+    // Update popup card price based on quantity
+    function updatePopupCardPrice(priceElement, quantity) {
+        const basePricePerUnit = parseFloat(priceElement.getAttribute('data-base-price')) || 0;
+        const totalPrice = basePricePerUnit * quantity;
+        priceElement.textContent = `${formatPrice(totalPrice)} ₴`;
+    }
 
-    // Quantity plus/minus buttons
-    $(document).on('click', '.minus_cart', function (e) {
-        e.preventDefault();
-        var cartItem = $(this).closest('.cart-item');
-        decreaseQuantity(cartItem);
-    });
+    // Setup add to cart handler for popup cards
+    function setupPopupAddToCartHandler(card, addToCartButton, cardIndex) {
+        if (!addToCartButton) return;
 
-    $(document).on('click', '.plus_cart', function (e) {
-        e.preventDefault();
-        var cartItem = $(this).closest('.cart-item');
-        increaseQuantity(cartItem);
-    });
+        addToCartButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const quantityInput = card.querySelector('.quantity');
+            const priceElement = card.querySelector('.price');
+            const cardImage = card.querySelector('.pop_up-card-img');
+            const cardTitle = card.querySelector('.h3_title');
+            
+            if (!quantityInput || !priceElement || !cardImage || !cardTitle) return;
+
+            const quantity = parseInt(quantityInput.value) || 1;
+            const basePricePerUnit = parseFloat(priceElement.getAttribute('data-base-price')) || 0;
+            const productName = cardTitle.textContent.trim();
+            const productImage = cardImage.src;
+            
+            // Create ingredients list for the item
+            let ingredients = '';
+            if (cardIndex === 0) {
+                // Combo menu - include original addons
+                ingredients = originalProductData.selectedAddons.map(addon => addon.name).join('<br>') || 'Комбо меню';
+            } else {
+                // Single item - include original addons
+                ingredients = originalProductData.selectedAddons.map(addon => addon.name).join('<br>') || 'Додатковий товар';
+            }
+
+            // Add to cart using existing cart system
+            const itemId = 'popup_item_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            
+            // Check for existing item
+            const existingItem = findExistingCartItem(productName, ingredients);
+            
+            if (existingItem) {
+                // Update existing item
+                const existingQuantityInput = existingItem.find('.quantity_cart');
+                const currentQuantity = parseInt(existingQuantityInput.val(), 10);
+                const newQuantity = currentQuantity + quantity;
+                existingQuantityInput.val(newQuantity);
+                updateCartPrice(existingItem, newQuantity);
+            } else {
+                // Create new cart item
+                const cartItem = createCartItemHTML({
+                    itemId: itemId,
+                    image: productImage,
+                    name: productName,
+                    ingredients: ingredients,
+                    quantity: quantity,
+                    pricePerUnit: basePricePerUnit,
+                    packaging: '0',
+                    isWeightBased: false,
+                    weightStep: 1,
+                    minWeight: 1,
+                    referenceWeight: 1,
+                    unitLabel: 'шт'
+                });
+                
+                cartItemsContainer.append(cartItem);
+            }
+
+            saveCart();
+            updateCartNumber();
+
+            // Close popup
+            popup.style.display = 'none';
+            document.body.style.overflow = '';
+
+            // Visual feedback
+            addToCartButton.textContent = 'Додано в кошик';
+            setTimeout(function() {
+                addToCartButton.textContent = 'Додати в кошик';
+            }, 2000);
+        });
+    }
 });
-
 
 
 
