@@ -786,7 +786,7 @@ document.addEventListener('DOMContentLoaded', function () {
             syncPopupWithProduct();
             
             // Show popup
-            popup.style.display = 'flex';
+            popup.style.display = 'block';
             document.body.style.overflow = 'hidden'; // Prevent background scrolling
         });
     });
