@@ -736,86 +736,233 @@ function restoreCart(savedCartItems) {
 
 
 // === SPECIAL OFFER POPUP HANDLER ===
-// === UPDATED POPUP ADD TO CART HANDLER WITH PACKAGING ===
-function setupPopupAddToCartHandler(card, addToCartButton, cardIndex) {
-    if (!addToCartButton) return;
+// === SPECIAL OFFER POPUP HANDLER ===
+document.addEventListener('DOMContentLoaded', function () {
+    const popup = document.querySelector('.container-pop_up');
+    const openButtons = document.querySelectorAll('.add_card_open');
+    const closeButton = popup?.querySelector('.close_form');
+    const popupCards = popup?.querySelectorAll('.pop_up-card');
 
-    addToCartButton.addEventListener('click', function (e) {
-        e.preventDefault();
-        e.stopPropagation(); // Prevent event bubbling
-        e.stopImmediatePropagation(); // Extra safety
+    if (!popup || !closeButton || !openButtons.length || !popupCards.length) return;
 
-        const quantityInput = card.querySelector('.quantity');
-        const priceElement = card.querySelector('.price');
-        const cardImage = card.querySelector('.pop_up-card-img');
-        const cardTitle = card.querySelector('.h3_title');
-        // Get packaging cost from the popup card title
-        const cardTitlePopup = card.querySelector('.h3_title-pop_up-card');
+    let originalProductData = {};
+    let isPopupHandlersInitialized = false;
+    let isAddToCartHandlersInitialized = false;
 
-        if (!quantityInput || !priceElement || !cardImage || !cardTitle) return;
+    // Open popup handler
+    openButtons.forEach(button => {
+        button.addEventListener('click', function (e) {
+            e.preventDefault();
 
-        const quantity = parseInt(quantityInput.value) || 1;
-        const basePricePerUnit = parseFloat(priceElement.getAttribute('data-base-price')) || 0;
-        const productName = cardTitle.textContent.trim();
-        const productImage = cardImage.src;
-        
-        // Get packaging cost from the popup card
-        const packagingCost = cardTitlePopup ? (parseInt(cardTitlePopup.getAttribute('packaging')) || 0) : 0;
+            // Get the parent product card
+            const parentCard = button.closest('.product_card') || button.closest('[class*="product"]');
+            if (!parentCard) return;
 
-        let ingredients = '';
-        if (cardIndex === 0) {
-            ingredients = originalProductData.selectedAddons.map(addon => addon.name).join('<br>') || 'Комбо меню';
-        } else {
-            ingredients = originalProductData.selectedAddons.map(addon => addon.name).join('<br>') || 'Додатковий товар';
-        }
+            // Extract base product data from the main product page
+            const priceElement = parentCard.querySelector('.price:not(.price_slider)');
+            const quantityInput = parentCard.querySelector('#quantity_card');
+            const productTitle = parentCard.querySelector('.product_title:not(.product_title-slider_test)');
 
-        const itemId = 'popup_item_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-        const existingItem = findExistingCartItem(productName, ingredients);
+            if (!priceElement || !quantityInput || !productTitle) return;
 
-        if (existingItem) {
-            const existingQuantityInput = existingItem.find('.quantity_cart');
-            const currentQuantity = parseInt(existingQuantityInput.val(), 10);
-            const newQuantity = currentQuantity + quantity;
-            existingQuantityInput.val(newQuantity);
-            updateCartPrice(existingItem, newQuantity);
-        } else {
-            const cartItem = createCartItemHTML({
-                itemId: itemId,
-                image: productImage,
-                name: productName,
-                ingredients: ingredients,
-                quantity: quantity,
-                pricePerUnit: basePricePerUnit,
-                packaging: packagingCost.toString(), // Use packaging cost from popup
-                isWeightBased: false,
-                weightStep: 1,
-                minWeight: 1,
-                referenceWeight: 1,
-                unitLabel: 'шт'
+            // Store original product data
+            const basePrice = parseFloat(priceElement.getAttribute('price')?.replace(',', '.') || 0);
+            const currentQuantity = parseInt(quantityInput.value || 1);
+            const productName = productTitle.textContent.trim();
+
+            // Get selected add-ons and their prices
+            const selectedAddons = [];
+            let addonsPriceTotal = 0;
+            document.querySelectorAll('input[type="checkbox"][price_add]:checked').forEach(checkbox => {
+                const addonPrice = parseFloat(checkbox.getAttribute('price_add') || 0);
+                const addonName = checkbox.nextElementSibling?.textContent?.trim() || '';
+                selectedAddons.push({ name: addonName, price: addonPrice });
+                addonsPriceTotal += addonPrice;
             });
 
-            cartItemsContainer.append(cartItem);
-        }
+            originalProductData = {
+                basePrice: basePrice,
+                quantity: currentQuantity,
+                productName: productName,
+                selectedAddons: selectedAddons,
+                addonsPriceTotal: addonsPriceTotal,
+                totalPricePerUnit: basePrice + addonsPriceTotal
+            };
 
-        saveCart();
-        updateCartNumber();
+            // Sync popup data with original product
+            syncPopupWithProduct();
 
-        // Close popup
-        const popup = document.querySelector('.container-pop_up');
-        if (popup) {
+            // Show popup
+            popup.style.display = 'block';
+            document.body.style.overflow = 'hidden'; // Prevent background scrolling
+        });
+    });
+
+    // Close popup handler
+    closeButton.addEventListener('click', function (e) {
+        e.preventDefault();
+        popup.style.display = 'none';
+        document.body.style.overflow = '';
+    });
+
+    popup.addEventListener('click', function (e) {
+        if (e.target === popup) {
             popup.style.display = 'none';
             document.body.style.overflow = '';
         }
-
-        addToCartButton.textContent = 'Додано в кошик';
-        setTimeout(function () {
-            addToCartButton.textContent = 'Додати в кошик';
-        }, 2000);
-
-        // Prevent any further event propagation
-        return false;
     });
-}
+
+    // Function to sync popup cards with original product data
+    function syncPopupWithProduct() {
+        popupCards.forEach((card, index) => {
+            const quantityInput = card.querySelector('.quantity');
+            const priceElement = card.querySelector('.price');
+            const plusButton = card.querySelector('.plus_card-pop_up');
+            const minusButton = card.querySelector('.minus_card-pop_up');
+            const addToCartButton = card.querySelector('.add_card_pop_up');
+
+            if (!quantityInput || !priceElement) return;
+
+            // Set initial quantity
+            quantityInput.value = originalProductData.quantity;
+
+            // Calculate and set price
+            let cardPrice;
+            if (index === 0) {
+                const comboBasePrice = parseFloat(priceElement.getAttribute('price') || 275);
+                cardPrice = (comboBasePrice + originalProductData.addonsPriceTotal) * originalProductData.quantity;
+            } else {
+                cardPrice = originalProductData.totalPricePerUnit * originalProductData.quantity;
+            }
+
+            priceElement.textContent = `${formatPrice(cardPrice)} ₴`;
+            priceElement.setAttribute('data-base-price',
+                index === 0 ?
+                    parseFloat(priceElement.getAttribute('price') || 275) + originalProductData.addonsPriceTotal :
+                    originalProductData.totalPricePerUnit
+            );
+
+            if (!isPopupHandlersInitialized) {
+                setupPopupQuantityHandlers(card, quantityInput, priceElement, plusButton, minusButton);
+            }
+
+            if (!isAddToCartHandlersInitialized) {
+                setupPopupAddToCartHandler(card, addToCartButton, index);
+            }
+        });
+
+        isPopupHandlersInitialized = true;
+        isAddToCartHandlersInitialized = true;
+    }
+
+    // Setup quantity change handlers
+    function setupPopupQuantityHandlers(card, quantityInput, priceElement, plusButton, minusButton) {
+        quantityInput.addEventListener('input', function () {
+            let newQuantity = parseInt(this.value) || 1;
+            if (newQuantity < 1) newQuantity = 1;
+            if (newQuantity > 100) newQuantity = 100;
+            this.value = newQuantity;
+            updatePopupCardPrice(priceElement, newQuantity);
+        });
+
+        if (plusButton) {
+            plusButton.addEventListener('click', function (e) {
+                e.preventDefault();
+                let currentQuantity = parseInt(quantityInput.value) || 1;
+                if (currentQuantity < 100) {
+                    currentQuantity++;
+                    quantityInput.value = currentQuantity;
+                    updatePopupCardPrice(priceElement, currentQuantity);
+                }
+            });
+        }
+
+        if (minusButton) {
+            minusButton.addEventListener('click', function (e) {
+                e.preventDefault();
+                let currentQuantity = parseInt(quantityInput.value) || 1;
+                if (currentQuantity > 1) {
+                    currentQuantity--;
+                    quantityInput.value = currentQuantity;
+                    updatePopupCardPrice(priceElement, currentQuantity);
+                }
+            });
+        }
+    }
+
+    function updatePopupCardPrice(priceElement, quantity) {
+        const basePricePerUnit = parseFloat(priceElement.getAttribute('data-base-price')) || 0;
+        const totalPrice = basePricePerUnit * quantity;
+        priceElement.textContent = `${formatPrice(totalPrice)} ₴`;
+    }
+
+    function setupPopupAddToCartHandler(card, addToCartButton, cardIndex) {
+        if (!addToCartButton) return;
+
+        addToCartButton.addEventListener('click', function (e) {
+            e.preventDefault();
+
+            const quantityInput = card.querySelector('.quantity');
+            const priceElement = card.querySelector('.price');
+            const cardImage = card.querySelector('.pop_up-card-img');
+            const cardTitle = card.querySelector('.h3_title');
+
+            if (!quantityInput || !priceElement || !cardImage || !cardTitle) return;
+
+            const quantity = parseInt(quantityInput.value) || 1;
+            const basePricePerUnit = parseFloat(priceElement.getAttribute('data-base-price')) || 0;
+            const productName = cardTitle.textContent.trim();
+            const productImage = cardImage.src;
+
+            let ingredients = '';
+            if (cardIndex === 0) {
+                ingredients = originalProductData.selectedAddons.map(addon => addon.name).join('<br>') || 'Комбо меню';
+            } else {
+                ingredients = originalProductData.selectedAddons.map(addon => addon.name).join('<br>') || 'Додатковий товар';
+            }
+
+            const itemId = 'popup_item_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            const existingItem = findExistingCartItem(productName, ingredients);
+
+            if (existingItem) {
+                const existingQuantityInput = existingItem.find('.quantity_cart');
+                const currentQuantity = parseInt(existingQuantityInput.val(), 10);
+                const newQuantity = currentQuantity + quantity;
+                existingQuantityInput.val(newQuantity);
+                updateCartPrice(existingItem, newQuantity);
+            } else {
+                const cartItem = createCartItemHTML({
+                    itemId: itemId,
+                    image: productImage,
+                    name: productName,
+                    ingredients: ingredients,
+                    quantity: quantity,
+                    pricePerUnit: basePricePerUnit,
+                    packaging: '0',
+                    isWeightBased: false,
+                    weightStep: 1,
+                    minWeight: 1,
+                    referenceWeight: 1,
+                    unitLabel: 'шт'
+                });
+
+                cartItemsContainer.append(cartItem);
+            }
+
+            saveCart();
+            updateCartNumber();
+
+            popup.style.display = 'none';
+            document.body.style.overflow = '';
+
+            addToCartButton.textContent = 'Додано в кошик';
+            setTimeout(function () {
+                addToCartButton.textContent = 'Додати в кошик';
+            }, 2000);
+        });
+    }
+});
+
 
 
 
@@ -954,4 +1101,3 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Оновлення кожну хвилину, якщо користувач довго на сторінці
   setInterval(toggleFirstAddressVisibility, 60000);
-
