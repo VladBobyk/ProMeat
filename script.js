@@ -736,7 +736,7 @@ function restoreCart(savedCartItems) {
 
 
 // === SPECIAL OFFER POPUP HANDLER ===
-// === SPECIAL OFFER POPUP HANDLER ===
+// === SPECIAL OFFER POPUP HANDLER (FIXED WITH PACKAGING) ===
 document.addEventListener('DOMContentLoaded', function () {
     const popup = document.querySelector('.container-pop_up');
     const openButtons = document.querySelectorAll('.add_card_open');
@@ -820,6 +820,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const plusButton = card.querySelector('.plus_card-pop_up');
             const minusButton = card.querySelector('.minus_card-pop_up');
             const addToCartButton = card.querySelector('.add_card_pop_up');
+            const titleElement = card.querySelector('.h3_title-pop_up-card'); // Get title element for packaging
 
             if (!quantityInput || !priceElement) return;
 
@@ -841,6 +842,12 @@ document.addEventListener('DOMContentLoaded', function () {
                     parseFloat(priceElement.getAttribute('price') || 275) + originalProductData.addonsPriceTotal :
                     originalProductData.totalPricePerUnit
             );
+
+            // Store packaging cost from title element
+            if (titleElement) {
+                const packagingCost = titleElement.getAttribute('packaging') || '0';
+                priceElement.setAttribute('data-packaging', packagingCost);
+            }
 
             if (!isPopupHandlersInitialized) {
                 setupPopupQuantityHandlers(card, quantityInput, priceElement, plusButton, minusButton);
@@ -905,14 +912,20 @@ document.addEventListener('DOMContentLoaded', function () {
             const quantityInput = card.querySelector('.quantity');
             const priceElement = card.querySelector('.price');
             const cardImage = card.querySelector('.pop_up-card-img');
-            const cardTitle = card.querySelector('.h3_title');
+            const cardTitle = card.querySelector('.h3_title-pop_up-card'); // Updated to get title with packaging
+            const productTitleElement = card.querySelector('.h3_title'); // Fallback for product name
 
-            if (!quantityInput || !priceElement || !cardImage || !cardTitle) return;
+            if (!quantityInput || !priceElement || !cardImage) return;
 
             const quantity = parseInt(quantityInput.value) || 1;
             const basePricePerUnit = parseFloat(priceElement.getAttribute('data-base-price')) || 0;
-            const productName = cardTitle.textContent.trim();
+            
+            // Get product name from either element
+            const productName = (cardTitle?.textContent || productTitleElement?.textContent || '').trim();
             const productImage = cardImage.src;
+
+            // Get packaging cost from the title element with packaging attribute
+            const packagingCost = cardTitle ? (cardTitle.getAttribute('packaging') || '0') : '0';
 
             let ingredients = '';
             if (cardIndex === 0) {
@@ -938,7 +951,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     ingredients: ingredients,
                     quantity: quantity,
                     pricePerUnit: basePricePerUnit,
-                    packaging: '0',
+                    packaging: packagingCost, // Now properly using packaging cost from popup
                     isWeightBased: false,
                     weightStep: 1,
                     minWeight: 1,
