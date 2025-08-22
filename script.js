@@ -1100,7 +1100,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
     const startMinutes = 11 * 60;      // 11:00
-    const endMinutes = 20 * 60 + 30;   // 20:30
+    const endMinutes = 20 * 60;   // 20:30  + 30
 
     if (currentMinutes >= startMinutes && currentMinutes <= endMinutes) {
       element.style.display = "";
