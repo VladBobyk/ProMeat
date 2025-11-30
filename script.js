@@ -1069,9 +1069,9 @@ document.addEventListener('DOMContentLoaded', function () {
         let informationText;
 
         if (type === 'today') {
-            informationText = `Замовлення їжі зараз закрито, будь ласка, повертайтесь до нас: 2 грудня з 10:00 до 20:00`;
+            informationText = `Замовлення їжі зараз закрито, будь ласка, повертайтесь до нас: 2 грудня з 10:00 до 20:30`;
         } else {
-            informationText = `Замовлення їжі зараз закрито, будь ласка, повертайтесь до нас: 2 грудня з 10:00 до 20:00`;
+            informationText = `Замовлення їжі зараз закрито, будь ласка, повертайтесь до нас: 2 грудня з 10:00 до 20:30`;
         }
 
         const newInformationBlock = document.createElement('div');
