@@ -1018,8 +1018,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const productContent = document.querySelectorAll('.product_content');
 
     // Робочий графік: старт і кінець часу (вказано у форматі [години, хвилини])
-    const workingHoursStart = [13, 30]; // Початок: 10:00
-    const workingHoursEnd = [13, 30]; // Кінець: 20:30
+    const workingHoursStart = [10, 00]; // Початок: 10:00
+    const workingHoursEnd = [20, 30]; // Кінець: 20:30
 
     let nextAvailableDay = new Date(currentDate); // Початково припускаємо, що доступний день — сьогодні
 
@@ -1069,10 +1069,10 @@ document.addEventListener('DOMContentLoaded', function () {
         let informationText;
 
         if (type === 'today') {
-            informationText = `Замовлення їжі зараз закрито, будь ласка, повертайтесь до нас: 2 грудня з 10:00 до 20:30`;
-        } else {
-            informationText = `Замовлення їжі зараз закрито, будь ласка, повертайтесь до нас: 2 грудня з 10:00 до 20:30`;
-        }
+           informationText = `Замовлення їжі зараз закрито, будь ласка, повертайтесь до нас: <br><strong class="bold-text">Сьогодні з ${startTime} до ${endTime}</strong>`;
+      } else {
+          informationText = `Замовлення їжі зараз закрито, будь ласка, повертайтесь до нас: <br><strong class="bold-text">${nextDayOfWeek} з ${startTime} до ${endTime}</strong>`;
+     }
 
         const newInformationBlock = document.createElement('div');
         newInformationBlock.classList.add('information-block');
@@ -1087,11 +1087,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 
-//if (type === 'today') {
-    //        informationText = `Замовлення їжі зараз закрито, будь ласка, повертайтесь до нас: <br><strong class="bold-text">Сьогодні з ${startTime} до ${endTime}</strong>`;
-      //  } else {
-           // informationText = `Замовлення їжі зараз закрито, будь ласка, повертайтесь до нас: <br><strong class="bold-text">${nextDayOfWeek} з ${startTime} до ${endTime}</strong>`;
-       // }
 
 
 // Приховати адресу
